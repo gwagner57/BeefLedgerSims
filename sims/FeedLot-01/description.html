@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en-US" xml:lang="en-US" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <title>ServiceDesk-1 Object Event Simulation Description</title>
+    <meta content="width=device-width, initial-scale = 1.0" name="viewport" />
+    <meta content="en" http-equiv="Content-Language" />
+    <meta content="A service queue model (one service and one queue) with two statistics: maximum queue length and service utilization. For simplicity, the model uses abstract (discrete) time and abstracts away from individual customers and from the composition of the queue, which is only represented in terms of its length. The model includes one object type: ServiceDesk, and two event types: CustomerArrival and CustomerDeparture. Both the random time variable for the recurrence of customer arrival events and the random time variable for modeling the duration of services are discrete."
+          name="description" />
+    <link href="../framework/description.css" rel="stylesheet" />
+    <script src="metadata.js"></script>
+    <script src="../framework/description.js"></script>
+  </head>
+  <body onload="oes.ui.setupDescription()"><div id="frontMatter"> <h1><span>Cattle Breeders and a Feedlot</span> <a href="index.html">Back to simulation</a></h1> <p><strong>Classification tags</strong>: supply chain simulation, DES, fixed-increment time progression</p> <figure class="right"><img alt="" src="media/img/theme-image.svg" width="240" /></figure>
+  <section id="shortDescription"></section> </div> <section class="mbd collapsed"><h1><span>►</span>Conceptual Model <sup
+  class="expl-req">?</sup></h1> <div class="expl" id="expl-CM"></div> <section><h1>Conceptual Information Model <sup class="expl-req">?</sup></h1>
+  <div class="expl" id="expl-CIM"></div> <p>The potentially relevant object types are:</p> <!--
+     <figure class="right-float">
+       <img src="CIM-ObjT.svg" width="450"/>
+       <figcaption>A conceptual model describing object types.</figcaption>
+     </figure>
+--> <ol>
+      <li>cattle,</li>
+      <li>breeders,</li>
+      <li>feedlots,</li>
+      <li>slaughter houses.</li>
+    </ol> 
+	<p>Potentially relevant types of events are:</p> <ol>
+      <li>purchases of cattle by a feedlot,</li>
+      <li>sales of cattle by a feedlot to a slaughter house.</li>
+    </ol> 
+	<p>Both object types and event types, together with their participation associations, can be visually described in a UML class diagram, as shown below.</p> <figure> <img src="img/CIM.svg" width="600" /> <figcaption>A conceptual information model describing object types and event types.</figcaption> </figure>
+  </section> 
+  <section> <h1>Conceptual Process Model <sup class="expl-req">?</sup></h1> <div class="expl" id="expl-CPM"></div> 
+  <table>
+      <caption>Event rules.</caption>
+      <thead>
+        <tr>
+          <th>ON (event type)</th>
+          <th>DO (event routine)</th>
+          <th>Rule Diagram</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>each day</td>
+          <td>...</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>purchase</td>
+          <td>...</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>sale</td>
+          <td>...</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table> 
+	<p>The involved types of events can be related with each other via their (possibly conditional) temporal succession, as visualized in the
+  following diagram:</p> <figure> <!--<img src="" width="600" />--> <figcaption>A conceptual process diagram integrating the
+  event rule diagrams.</figcaption> </figure> 
+  </section> </section>
+  <section class="mbd collapsed"><h1><span>►</span>Simulation Design Model <sup class="expl-req">?</sup></h1> 
+  <div class="expl" id="expl-DM"></div> <section><h1>Information Design Model <sup class="expl-req">?</sup></h1> <div
+  class="expl" id="expl-IDM"></div> <p>...</p> 
+  <p>A simulation design for the purpose of computing the statistics ... is obtained by modeling the following object types:</p>
+  
+  <p>We get the following types of events:</p>
+  <ul>
+      <li><b><code>Purchase</code></b> with reference properties <code>feedlot</code> and <code>breeder</code>.</li>
+      <li><b><code>Restocking</code></b> with a reference property <code>feedlot</code>.</li>
+      <li><b><code>Sale</code></b> with a reference property <code>feedlot</code>.</li>
+    </ul>
+	<p>...</p> 
+	</section>
+	<section><h1>Process Design Model <sup class="expl-req">?</sup></h1> <div class="expl" id="expl-PDM"></div> <table>
+      <caption>Event rule design table.</caption>
+      <thead>
+        <tr>
+          <td>ON (event type)</td>
+          <td>DO (event routine)</td>
+        </tr>
+      </thead>
+      <tbody>
+	  <!--
+        <tr>
+          <td>CustomerArrival( sd) @ t</td>
+          <td style="font-size:smaller">INCREMENT sd.queueLength<br /> IF sd.queueLength = 1<br /> THEN SCHEDULE CustomerDeparture( sd) @ (t +
+          sd.serviceDuration())</td>
+        </tr>
+	  -->	
+      </tbody>
+    </table>
+	<!--
+<figure> <img src="media/img/PDM.svg" width="600" /> <figcaption>A process design model integrating both event rule design
+  models.</figcaption> </figure> 
+  -->
+  </section>
+</section> 
+<p><a href="index.html">Back to simulation</a></p>
+</body>
+</html>
