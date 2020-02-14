@@ -6,7 +6,7 @@ sim.scenario.idCounter = 1001;  // start value of auto IDs
 //sim.scenario.randomSeed = 2345;  // optional
 sim.config.createLog = false;
 //sim.config.suppressInitialStateUI = true;
-sim.config.runInMainThread = true;  // for debugging
+//sim.config.runInMainThread = true;  // for debugging
 /*******************************************************
  Simulation Model
 ********************************************************/
