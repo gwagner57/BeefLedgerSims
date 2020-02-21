@@ -44,81 +44,87 @@ sim.model.v.postWeaningDwgAverage =  {
   range: "Decimal",
   decimalPlaces: 1,
   hint: "Post-weaning average daily weight gain (g)",
-  initialValue: 600.0
+  initialValue: 550.0
 };
 sim.model.v.postWeaningDwgStdDev =  {
   range: "Decimal",
   decimalPlaces: 1,
   hint: "Prost-weaning std. deviation daily weight gain (g)",
-  initialValue: 50.0
+  initialValue: 150.0
 };
 sim.model.v.nmrOfBreeders =  {
   range: "PositiveInteger",
   label: "Number of breeders",
-  initialValue: 2  //20
+  initialValue: 10
 };
 sim.model.v.breederCapacityMin =  {
   range: "PositiveInteger",
   hint: "Minimum breeder capacity",
-  initialValue: 3 //100
+  initialValue: 100
 };
 sim.model.v.breederCapacityMax =  {
   range: "PositiveInteger",
   hint: "Maximum breeder capacity",
-  initialValue: 5 //500
+  initialValue: 500
 };
-sim.model.v.feedlotEntryAge =  {
+sim.model.v.feedlotEntryAgeThreshold =  {
   range: "PositiveInteger",
   label: "Entry age",
   hint: "Feedlot entry age (mo)",
-  initialValue: 2 //26
+  initialValue: 26
+};
+sim.model.v.feedlotEntryWeightThreshold =  {
+  range: "PositiveInteger",
+  label: "Entry weight",
+  hint: "Feedlot entry weight (kg)",
+  initialValue: 500
 };
 sim.model.v.feedlotExitAge =  {
   range: "PositiveInteger",
   label: "Exit age",
   hint: "Feedlot exit age (mo)",
-  initialValue: 4 //30
+  initialValue: 30 //30
 };
 sim.model.v.purchaseMinBatchSize =  {
   range: "PositiveInteger",
   hint: "Purchase minimum batch size",
-  initialValue: 3 //10
+  initialValue: 10 //10
 };
 sim.model.v.avgPurchasePrice =  {
   range: "Decimal",
   decimalPlaces: 2,
   hint: "Average purchase price per cattle (AUD)",
-  initialValue: 1258.0
+  initialValue: 1.258
 };
 sim.model.v.feedlotDwgAverage =  {
   range: "Decimal",
   decimalPlaces: 1,
   hint: "Feedlot average daily weight gain (g)",
-  initialValue: 1600.0
+  initialValue: 1300.0
 };
 sim.model.v.feedlotDwgStdDev =  {
   range: "Decimal",
   decimalPlaces: 1,
   hint: "Feedlot std. deviation daily weight gain (g)",
-  initialValue: 100.0
+  initialValue: 400.0
 };
 sim.model.v.saleMinBatchSize =  {
   range: "PositiveInteger",
   hint: "Sale minimum batch size",
-  initialValue: 5 //10
+  initialValue: 12
 };
 sim.model.v.carcassPricePerKg =  {
   range: "Decimal",
   decimalPlaces: 2,
   hint: "Carcass price per kg (AUD)",
-  initialValue: 6.50
+  initialValue: 6.50 / 1000
 };
 sim.model.v.carcassWeightFactor =  {
   range: "Decimal",
   decimalPlaces: 2,
   label: "Carc. weight factor",
   hint: "Carcass weight factor",
-  initialValue: 0.8
+  initialValue: 0.6
 };
 
 sim.model.OnEachTimeStep = function () {
@@ -138,8 +144,8 @@ sim.model.OnEachTimeStep = function () {
       c = breeder.cattle[i];
       // take care of daily weight gain
       c.weight += rand.normal( sim.v.postWeaningDwgAverage, sim.v.postWeaningDwgStdDev) / 1000;
-      // test if cattle passes feedlot entry age
-      if (sim.time - c.bornOn === sim.v.feedlotEntryAge*30) {
+      // test if cattle passes feedlot entry age threshold
+      if (sim.time - c.bornOn === sim.v.feedlotEntryAgeThreshold*30) {
         // update "atFeedlotEntryAge"
         breeder.atFeedlotEntryAge++;
       }
@@ -152,7 +158,7 @@ sim.model.OnEachTimeStep = function () {
         sim.v.purchaseMinBatchSize <= maxEntryCapacity
     ) {
       tooYoungIndex = breeder.cattle.findIndex(c =>
-          sim.time - c.bornOn < sim.v.feedlotEntryAge*30);
+          sim.time - c.bornOn < sim.v.feedlotEntryAgeThreshold*30);
       if (tooYoungIndex === -1) {
         purchaseBatchSize = Math.min( breeder.cattle.length, maxEntryCapacity);
       } else {
@@ -195,8 +201,9 @@ sim.model.OnEachTimeStep = function () {
         feedlot.atFeedlotExitAge++;
       }
     }
-    // deduct feedCostsPerDay from liquidity
+    // deduct daily feed costs and fixed costs from liquidity
     feedlot.liquidity -= feedlot.feedCostsPerDay * feedlot.cattle.length;
+    feedlot.liquidity -= feedlot.fixedCostsPerDay;
     // test if Purchase event needs to be created
     if (feedlot.atFeedlotExitAge >= sim.v.saleMinBatchSize &&
         !sim.FEL.getEventsOfType("Sale").some( function (evt) {
@@ -227,7 +234,8 @@ sim.model.OnEachTimeStep = function () {
  Define Initial State
 ********************************************************/
 sim.scenario.initialState.objects = {
-  "1": {typeName: "Feedlot", name:"feedlot", capacity: 500, liquidity: 100000, feedCostsPerDay: 3.2,
+  "1": {typeName: "Feedlot", name:"feedlot", capacity: 500, liquidity: 500,
+        feedCostsPerDay: 3.2/1000, fixedCostsPerDay: 1000/1000,
         cattle:[], potSuppliers: [], prefSuppliers: []}
 };
 sim.scenario.setupInitialState = function () {
@@ -245,13 +253,25 @@ sim.scenario.setupInitialState = function () {
  Define Output Statistics Variables
  ********************************************************/
 sim.model.statistics = {
-  /*
   "feedlotStockSize": {range:"NonNegativeInteger", showTimeSeries: true, label:"Feedlot stock size",
       expression: function () {
         return sim.objects["1"].cattle.length
     }
   },
-  */
-  "liquidity": {objectType:"Feedlot", objectIdRef: 1, unit:"AUD",
-    property:"liquidity", showTimeSeries: true, label:"Feedlot liquidity"}
+  "liquidity": {objectType:"Feedlot", objectIdRef: 1, unit:"TAUD",
+    property:"liquidity", showTimeSeries: true, label:"Feedlot liquidity"},
+  "cumulativeEntryWeight": {range:"Decimal"},
+  "nmrOfEntries": {range:"NonNegativeInteger"},
+  "averageEntryWeight": { range: "Decimal",  label:"Avg. entry weight",
+    computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
+    expression: function () {
+      return sim.stat.cumulativeEntryWeight / sim.stat.nmrOfEntries}
+  },
+  "cumulativeExitWeight": {range:"Decimal"},
+  "nmrOfExits": {range:"NonNegativeInteger"},
+  "averageExitWeight": { range: "Decimal",  label:"Avg. exit weight",
+    computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
+    expression: function () {
+      return sim.stat.cumulativeExitWeight / sim.stat.nmrOfExits}
+  },
 };

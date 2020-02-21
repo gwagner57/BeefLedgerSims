@@ -13,11 +13,19 @@ var Purchase = new cLASS({
   },
   methods: {
     "onEvent": function () {
-      var followupEvents=[];
+      var followupEvents=[], c=null;
       for (let i=0; i < this.cattle.length; i++) {
-        this.cattle[i].phase = CattlePhaseEL.AT_FEEDLOT;
+        c = this.cattle[i];
+        c.phase = CattlePhaseEL.AT_FEEDLOT;
+        // update statistics
+        sim.stat.nmrOfEntries++;
+        sim.stat.cumulativeEntryWeight += c.weight;
+        // test if purchased cattle has already passed feedlot exit age
+        if (sim.time - c.bornOn >= sim.v.feedlotExitAge*30) {
+          this.feedlot.atFeedlotExitAge++;
+        }
       }
-      this.feedlot.cattle.push(...this.cattle);
+      this.feedlot.cattle.push(...this.cattle); // appending the array this.cattle
       this.feedlot.liquidity -= this.batchPrice;
       return followupEvents;
     }

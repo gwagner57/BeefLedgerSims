@@ -927,8 +927,7 @@ form[id="expost-statistics"] h3 {
     margin-bottom: 0.2em;
 }
 div[id="time-series-chart"] {
-    width: 100%;
-    height: 450px;
+    /* height: 450px; */
 }
 
 #InitialStateObjectsUI table.PopTable {
@@ -937,33 +936,31 @@ div[id="time-series-chart"] {
 }
 
 div#share {
-  display: inline-block;
+    display: inline-block;
 }
 ul.links {
-  display: none;
-  list-style: none;
-  padding: 0;
-  margin: 0 0 0 1em;
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0 1em;
 }
 ul.links li {
-  display: inline;
-  text-align: center;
-  cursor: pointer;
-  margin-right: 1em;
+    display: inline;
+    text-align: center;
+    cursor: pointer;
+    margin-right: 1em;
 }
 ul.links li:hover {
-  text-decoration: underline;
+    text-decoration: underline;
 }
 .icon-social {
-  width: 20px;
-  height: 20px;
-  background: #eee;
+    width: 20px;
+    height: 20px;
+    background: #eee;
 }
 #share-this {
-  display: none;
+    display: none;
 }
-
-
 /* ==========================================================================
    Print styles for printing the SVG chart
    ========================================================================== */

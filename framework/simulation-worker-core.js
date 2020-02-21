@@ -453,6 +453,15 @@ util.loadScript = function (pathAndFilename, basePath, callback, errCallback) {
  ****************************************************************/
 var math = {};
 /**
+ * Round a decimal number to decimalPlaces
+ * @param {number} x - the number to round
+ * @param {integer} d - decimal places
+ */
+math.round = function (x,d) {
+  var roundingFactor = Math.pow(10, d);
+  return Math.round((x + Number.EPSILON) * roundingFactor) / roundingFactor;
+};
+/**
  * Compute the sum of an array of numbers
  * @param {Array} data - An array of numbers
  */
@@ -701,7 +710,7 @@ function cLASS (classSlots) {
           if (typeof pDef.initialValue === "function") {
             propsWithInitialValFunc.push(p);
           } else this[p] = pDef.initialValue;
-        } else if (p === "id" && range === "AutoNumber") {    // assign auto-ID
+        } else if (p === "id" && range === "AutoIdNumber") {    // assign auto-ID
           if (typeof this.constructor.getAutoId === "function") {
             this[p] = this.constructor.getAutoId();
           } else if (this.constructor.idCounter !== undefined) {
@@ -728,7 +737,7 @@ function cLASS (classSlots) {
           } else {
             throw "A value for "+ p +" is required when creating a(n) "+ classSlots.Name;
           }
-        }		  
+        }          
       }
       // initialize historical properties
       if (pDef.historySize) {
@@ -882,7 +891,8 @@ function cLASS (classSlots) {
       // make sure the eNUMERATION meta-class object can be checked if available
       var eNUMERATION = typeof eNUMERATION === "undefined" ? undefined : eNUMERATION;
       var propDecl = this.constructor.properties[prop],
-          range = propDecl.range, val = this[prop];
+          range = propDecl.range, val = this[prop],
+          decimalPlaces = propDecl.displayDecimalPlaces || oes.defaults.displayDecimalPlaces || 2;
       var valuesToConvert=[], displayStr="", k=0,
           listSep = ", ";
       if (val === undefined || val === null) return "";
@@ -899,8 +909,11 @@ function cLASS (classSlots) {
           valuesToConvert[i] = propDecl.val2str( v);
         } else if (eNUMERATION && range instanceof eNUMERATION) {
           valuesToConvert[i] = range.labels[v-1];
-        } else if (["number","string","boolean"].includes( typeof v) || !v) {
+        } else if (["string","boolean"].includes( typeof v) || !v) {
           valuesToConvert[i] = String( v);
+        } else if (typeof v === "number") {
+          if (Number.isInteger(v)) valuesToConvert[i] = String( v);
+          else valuesToConvert[i] = math.round( v, decimalPlaces);
         } else if (range === "Date") {
           valuesToConvert[i] = util.createIsoDateString( v);
         } else if (Array.isArray( v)) {  // JSON-compatible array
@@ -969,7 +982,7 @@ function cLASS (classSlots) {
   * @return {boolean}
   */
 cLASS.isIntegerType = function (T) {
-  return ["Integer","PositiveInteger","AutoNumber","NonNegativeInteger"].includes(T) ||
+  return ["Integer","PositiveInteger","AutoIdNumber","NonNegativeInteger"].includes(T) ||
       T instanceof eNUMERATION;
 };
  /**
@@ -1129,7 +1142,7 @@ cLASS.isIntegerType = function (T) {
          }
        });
        break;
-     case "AutoNumber":
+     case "AutoIdNumber":
        if (valuesToCheck.length === 1) {
          if (!Number.isInteger( valuesToCheck[0]) || valuesToCheck[0] < 1) {
            constrVio = new RangeConstraintViolation("The value of "+ fld +
@@ -1429,7 +1442,7 @@ cLASS.isIntegerType = function (T) {
      case "NonNegativeInteger":
      case "PositiveInteger":
      case "Number":
-     case "AutoNumber":
+     case "AutoIdNumber":
      case "Decimal":
      case "Percent":
      case "ClosedUnitInterval":
@@ -1972,7 +1985,7 @@ sTORAGEmANAGER.prototype.add = function (mClass, rec) {
     records = rec;
   } else throw Error("2nd argument of 'add' must be a record or record list!");
   // create auto-IDs if required
-  if (mClass.properties.id && mClass.properties.id.range === "AutoNumber") {
+  if (mClass.properties.id && mClass.properties.id.range === "AutoIdNumber") {
     records.forEach( function (r) {
       if (!r.id) {  // do not overwrite assigned ID values
         if (typeof mClass.getAutoId === "function") r.id = mClass.getAutoId();
@@ -3015,7 +3028,8 @@ oes.defaults = {
   imgFolder: "img/",
   validateOnInput: false,
   expostStatDecimalPlaces: 2,
-  timeRoundingDecimalPlaces: 2
+  timeRoundingDecimalPlaces: 2,
+  displayDecimalPlaces: 2
 };
 oes.predfinedProperties = ["shortLabel", "history"];
 
@@ -3056,11 +3070,7 @@ oes.Object = new cLASS({
               valStr = val.id;
             }
           } else {  // if the property is not a reference property
-            if (typeof val === "number" && !Number.isInteger(val) && sim.timeRoundingFactor) {
-              valStr = JSON.stringify( Math.round(
-                         val * sim.timeRoundingFactor) / sim.timeRoundingFactor);
-            } else valStr = JSON.stringify( val);
-          }
+            valStr = this.getValueAsString( key);          }
         }
         if (this[key] !== undefined && propLabel) {
           str2 += (i>0 ? ", " : "") + propLabel +": "+ valStr;
@@ -3177,6 +3187,9 @@ oes.Event.rank = function (e1, e2) {
  *** Activities Package *******************************************************
  ******************************************************************************/
 /**
+ *TODO: (1) merge AT.fixedDuration and AT.randomDuration() into AT.duration()
+ *      (2) rename the property "resources" to "resourceRoles"
+ *      (3) rename the property "actor" to "performer"
  *  Activities are events having some duration and using resources. Their duration
  *  may be either pre-set to a fixed value or to a random value (in which case they
  *  have a scheduled end), or it may be determined by the occurrence of an activity
@@ -3362,7 +3375,7 @@ oes.ActivityEnd = new cLASS({
  * TODO: Add resourceTypes
  */
 oes.ProcNodeStatusEL = new eNUMERATION( "ProcNodeStatusEL",
-    ["idle", "busy", "down"] );
+    ["available", "busy", "down", "blocked"] );
 oes.ProcessingNode = new cLASS({
   Name: "pROCESSINGnODE", label: "Processing node", shortLabel: "PN",
   supertypeName: "oBJECT",
@@ -3370,11 +3383,12 @@ oes.ProcessingNode = new cLASS({
     "inputQueue": {range:"oBJECT", minCard: 0, maxCard: Infinity, isOrdered:true,
         label:"Input Queue", shortLabel:"inpQ"},
     "inputType": {range:"oBJECTtYPE", optional:true},  // default: "pROCESSINGoBJECT"
-    "status": {range: "ProcessingNodeStatusEL", shortLabel:"stat",
-        initialValue: oes.ProcNodeStatusEL.IDLE},
+    "status": {range: "ProcNodeStatusEL", shortLabel:"stat",
+        initialValue: oes.ProcNodeStatusEL.AVAILABLE},
     "successorNode": {range: "pROCESSINGnODE|eXITnODE", optional:true},
+    "predecessorNode": {range: "pROCESSINGnODE", optional:true},
     "fixedDuration": {range: "PositiveInteger", optional:true},
-    "capacity": {range: "PositiveInteger", optional:true},
+    "inputBufferCapacity": {range: "PositiveInteger", optional:true},
     // Ex: {"lemons": {type:"Lemon", quantity:2}, "ice": {type:"IceCubes", quantity:[0.2,"kg"]},...
     "inputTypes": {range: cLASS.Map( Object), optional:true},
     // Ex: {"lemonade": {type:"Lemonade", quantity:[1,"l"]}, ...
@@ -3492,8 +3506,8 @@ oes.ProcessingActivityEnd = new cLASS({
       this.activityType = "pROCESSINGaCTIVITY";
     },
     "onEvent": function () {
-      var procObj=null, nextNode=null, followupEvt1=null, followupEvt2=null,
-          followupEvents=[], pN = this.procNode;
+      var nextNode=null, followupEvt1=null, followupEvt2=null,
+          unloaded=false, followupEvents=[], pN = this.procNode;
       // retrieve activity
       var acty = sim.ongoingActivities[this.activityIdRef];
       // if there is an onActivityEnd procedure, execute it
@@ -3507,8 +3521,8 @@ oes.ProcessingActivityEnd = new cLASS({
       Object.keys( acty.resources).forEach( function (resRole) {
         var objIdStr = String(acty[resRole].id),
             resUtilMap = sim.stat.resUtil[this.activityType];
-        if (resUtilMap[objIdStr] === undefined) resUtilMap[objIdStr] = 0;
-        resUtilMap[objIdStr] += acty.duration;
+        if (resUtilMap[objIdStr] === undefined) resUtilMap[objIdStr] = {busy:0, blocked:0};
+        resUtilMap[objIdStr].busy += acty.duration;
         // update the activity state of resource objects
         delete acty[resRole].activityState[this.activityType];
       }, this);
@@ -3516,16 +3530,12 @@ oes.ProcessingActivityEnd = new cLASS({
       delete sim.ongoingActivities[String( this.activityIdRef)];
       // the successor node may be dynamically assigned by a.onActivityEnd()
       nextNode = pN.successorNode || acty.successorNode;
-      // pop processing object from the input queue
-      procObj = pN.inputQueue.shift();
-      // push object to the input queue of the next node
-      nextNode.inputQueue.push( procObj);
       // is the next node a processing node?
       if (nextNode.constructor.Name === "pROCESSINGnODE") {
         // is the next processing node available?
         if (nextNode.inputQueue.length === 1 &&
-            nextNode.status === oes.ProcNodeStatusEL.IDLE) {
-          // then start its ProcessingActivity
+            nextNode.status === oes.ProcNodeStatusEL.AVAILABLE) {
+          // then allocate next node and start its ProcessingActivity
           nextNode.status = oes.ProcNodeStatusEL.BUSY;
           followupEvt1 = new oes.ProcessingActivityStart({
             occTime: this.occTime + sim.nextMomentDeltaT,
@@ -3533,15 +3543,26 @@ oes.ProcessingActivityEnd = new cLASS({
             resources: acty.resources || {}
           });
           followupEvents.push( followupEvt1);
+        } else if (nextNode.inputBufferCapacity &&
+                   nextNode.inputQueue.length < nextNode.inputBufferCapacity) {
+          // pop processing object and push it to the input queue of the next node
+          nextNode.inputQueue.push( pN.inputQueue.shift());
+          unloaded = true;
+        } else if (nextNode.inputBufferCapacity &&
+            nextNode.inputQueue.length === nextNode.inputBufferCapacity) {
+          pN.status = oes.ProcNodeStatusEL.BLOCKED;
+          pN.blockedStartTime = sim.time;
         }
       } else {  // the next node is an exit node
+        // pop processing object and push it to the input queue of the next node
+        nextNode.inputQueue.push( pN.inputQueue.shift());
         followupEvents.push( new oes.Departure({
           occTime: this.occTime + sim.nextMomentDeltaT,
           exitNode: nextNode
         }));
       }
-      // are there more items in the input queue and no BREAK happened?
       if (pN.status === oes.ProcNodeStatusEL.BUSY) {
+        // are there more items in the input queue?
         if (pN.inputQueue.length > 0) {
           followupEvt2 = new oes.ProcessingActivityStart({
             occTime: this.occTime + sim.nextMomentDeltaT,
@@ -3549,7 +3570,22 @@ oes.ProcessingActivityEnd = new cLASS({
             resources: {}
           });
           followupEvents.push( followupEvt2);
-        } else pN.status = oes.ProcNodeStatusEL.IDLE;
+          if (unloaded && pN.inputQueue.length === pN.inputBufferCapacity-1 &&
+              pN.predecessorNode.status === oes.ProcNodeStatusEL.BLOCKED) {
+            // then unload predecessor node
+            pN.inputQueue.push( pN.predecessorNode.inputQueue.shift());
+            pN.predecessorNode.status = oes.ProcNodeStatusEL.AVAILABLE;
+            // collect processing node blocked time statistics
+            if (sim.stat.resUtil["pROCESSINGaCTIVITY"][pN.predecessorNode.id].blocked === undefined) {
+              sim.stat.resUtil["pROCESSINGaCTIVITY"][pN.predecessorNode.id].blocked =
+                  sim.time - pN.predecessorNode.blockedStartTime;
+            } else {
+              sim.stat.resUtil["pROCESSINGaCTIVITY"][pN.predecessorNode.id].blocked +=
+                  sim.time - pN.predecessorNode.blockedStartTime;
+            }
+            pN.predecessorNode.blockedStartTime = 0;  // reset
+          }
+        } else pN.status = oes.ProcNodeStatusEL.AVAILABLE;
       }
       return followupEvents;
     }
@@ -3722,7 +3758,7 @@ oes.Arrival = new cLASS({
         // push newly arrived object to the inputQueue of the next node
         this.entryNode.successorNode.inputQueue.push( procObj);
         // is the follow-up processing node available?
-        if (this.entryNode.successorNode.status === oes.ProcNodeStatusEL.IDLE) {
+        if (this.entryNode.successorNode.status === oes.ProcNodeStatusEL.AVAILABLE) {
           this.entryNode.successorNode.status = oes.ProcNodeStatusEL.BUSY;
           followupEvents.push( new oes.ProcessingActivityStart({
             occTime: this.occTime + sim.nextMomentDeltaT,
@@ -4845,10 +4881,12 @@ oes.stat.summary = {
 /*
 Improvements/extensions
 v1
+ -  (1) merge AT.fixedDuration and AT.randomDuration() into AT.duration()
+    (2) rename the property "resources" to "resourceRoles"
+    (3) rename the property "actor" to "performer" 
+    (4) refactor oes.ProcNodeStatusEL to oes.ResourceStatusEL and "idle" to "available"
+    (5) introduce processOwner (?) and resourcePools
  - support the definition of a "warm-up period"
- - allow scheduling new events
-   (a) without an occTime setting, such that they are scheduled with a delay of nextMomentDeltaT
-   (b) without an occTime setting, but with a "delay"
  - refactor createInitialObjEvt into a create and a reset procedure such that already created initial objects
     are not deleted, but reset, when rerunning a simulation
  - make constraint checking on object/event creation conditional depending on
@@ -4864,7 +4902,7 @@ v1
  - make a sims/basic-tests.html that invokes one or more seeded scenario simulations and checks statistics results
  - Define set/get for scenario.visualize and use the setter for dropping/setting-up the visualization (canvas)
 
- - Find out what is the meaning of "variable" versus "parameter" in AnyLogic
+ - Allow designating the dynamic properties of an object similar to the AnyLogic distinction between "variable" versus "parameter"
 
  - run experiment scenarios in parallel worker threads using the navigator.hardwareConcurrency information
    (see https://developer.mozilla.org/en-US/docs/Web/API/NavigatorConcurrentHardware/hardwareConcurrency)
@@ -4877,9 +4915,8 @@ v1
  - Implement support for the "recurrence" attribute of entry nodes
  - Allow setting a waiting timeout for the input queues of processing nodes (corresponding
    to AnyLogic's "Enable exit on timeout")
- - Implement support for the "capacity" attribute of processing nodes (by popping/forwarding
+ - Implement support for the "processingCapacity" attribute of processing nodes (by popping/forwarding
    more than one processing objects)
- - Allow processing nodes to specify a maximum queue length (limited queue capacity)
 
  *** later ***
  - Add exploration model
@@ -4888,7 +4925,8 @@ v1
 
 v2
  - extend mODELcLASS with object pools
- - analyze use of modules
+ - use ES6 modules
+ - improve add/delete performance by using Maps instead of plain JS objects (consider weak Maps for better Garbage Collection)
  - concurrent event processing with deferred state changes
  - add agents
  - add participation model
@@ -4966,15 +5004,15 @@ sim.removeObjectById = function (id) {
  *******************************************************
  * @author Gerd Wagner
  * @method
- * @param arg  the argument (e.g., an event to be scheduled)
+ * @param e  the event to be scheduled
  */
-sim.scheduleEvent = function (arg) {
-  if (arg instanceof oes.Event) {
-    if (arg.delay) arg.occTime = sim.time + arg.delay;
-    else if (!arg.occTime) arg.occTime = sim.time + sim.nextMomentDeltaT;
-    sim.FEL.add( arg);
+sim.scheduleEvent = function (e) {
+  if (e instanceof oes.Event) {
+    if (e.delay) e.occTime = sim.time + e.delay;
+    else if (!e.occTime) e.occTime = sim.time + sim.nextMomentDeltaT;
+    sim.FEL.add( e);
   } else {
-    console.log( arg.toString() +" is not an OES event (not an eVENT instance)!");
+    console.log( e.toString() +" is not an OES event (not an eVENT instance)!");
   }
 };
 /********************************************************
@@ -4999,7 +5037,7 @@ sim.initializeModelVariables = function (expParamSlots) {
  ********************************************************/
 sim.createInitialObjEvt = function () {
   var initState = sim.scenario.initialState,
-      initialEvtDefs=null, initialObjDefs=null, entryNodes={};
+      initialEvtDefs=null, initialObjDefs=null, entryNodes={}, procNodes={};
   // clear initial state data structures
   sim.objects = {};  // a map of all objects (accessible by ID)
   sim.namedObjects = {};  // a map of objects accessible by a unique name
@@ -5056,11 +5094,11 @@ sim.createInitialObjEvt = function () {
           if (!rangeClasses.some( function (rc) {
                 return cLASS[rc].instances[String(val)];
               })) {
-            throw "Referential integrity violation: "+ val +" does not reference any of "+
+            throw "Referential integrity violation for property "+ p +": "+ val +" does not reference any of "+
                 range +"!";
           }
         } else if (!(sim.objects[String(val)] instanceof cLASS[range])) {  // also allows superclasses
-            throw "Referential integrity violation: "+ val +" does not reference a "+ range +"!";
+            throw "Referential integrity violation for property "+ p +": "+ val +" does not reference a "+ range +"!";
         }
         obj[p] = sim.objects[String(val)];
       }
@@ -5082,8 +5120,8 @@ sim.createInitialObjEvt = function () {
   /**************************************************************
    * Special settings for PN models
    **************************************************************/
-  entryNodes = oes.EntryNode.instances;
   // schedule initial arrival events for the entry nodes of a PN
+  entryNodes = oes.EntryNode.instances;
   Object.keys( entryNodes).forEach( function (nodeIdStr) {
     var occT=0, arrEvt=null, entryNode = entryNodes[nodeIdStr];
     // has no arrival recurrence function been defined for this entry node?
@@ -5095,6 +5133,12 @@ sim.createInitialObjEvt = function () {
     }
     arrEvt = new oes.Arrival({ occTime: occT, entryNode: entryNode});
     sim.scheduleEvent( arrEvt);
+  });
+  // create backlinks in serial PNs
+  procNodes = oes.ProcessingNode.instances;
+  Object.keys( procNodes).forEach( function (nodeIdStr) {
+    var procNode = procNodes[nodeIdStr];
+    if (procNode.successorNode) procNode.successorNode.predecessorNode = procNode;
   });
 };
 /*************************************************************

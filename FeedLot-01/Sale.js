@@ -18,6 +18,9 @@ var Sale = new cLASS({
         c.phase = CattlePhaseEL.SLAUGHTERED;
         c.carcassWeight = c.weight * sim.v.carcassWeightFactor;
         this.feedlot.liquidity += c.carcassWeight * this.pricePerKg;
+        // update statistics
+        sim.stat.nmrOfExits++;
+        sim.stat.cumulativeExitWeight += c.weight;
       }
       return followupEvents;
     }
