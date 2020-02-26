@@ -1,7 +1,7 @@
 /*******************************************************
  Simulation Parameters
 ********************************************************/
-sim.scenario.simulationEndTime = 3*360;  // 3 years
+sim.scenario.simulationEndTime = 5*360;  // 3 years
 sim.scenario.idCounter = 1001;  // start value of auto IDs
 //sim.scenario.randomSeed = 2345;  // optional
 sim.config.createLog = false;
