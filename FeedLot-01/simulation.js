@@ -176,7 +176,6 @@ sim.model.OnEachTimeStep = function () {
         batchPrice: feedlotEntryBatch.reduce((w,c) => w + c.weight, 0) * sim.v.purchasePricePerKg,
         cattle: feedlotEntryBatch
       }));
-      breeder.atFeedlotEntryAge -= purchaseBatchSize;
     }
     // take care of daily births
     for (let i=0; i < nmrOfNewBornCalves; i++) {
@@ -213,32 +212,31 @@ sim.model.OnEachTimeStep = function () {
           return evt.feedlot.id === feedlot.id;
         })
     ) {
-      tooYoungIndex = feedlot.cattle.findIndex( cattle =>
-          sim.time - cattle.bornOn < sim.v.feedlotExitAgeThreshold*30);
+      tooYoungIndex = feedlot.cattle.findIndex( c =>
+          sim.time - c.bornOn < sim.v.feedlotExitAgeThreshold*30);
       if (tooYoungIndex === -1) {
         saleBatchSize = feedlot.cattle.length; //Math.min( feedlot.cattle.length, maxExitCapacity);
       } else {
         saleBatchSize = tooYoungIndex; //Math.min( tooYoungIndex, maxExitCapacity);
       }
       // extract and remove the first saleBatchSize elements
-      feedlotExitBatch = feedlot.cattle.splice(0, saleBatchSize);
+      feedlotExitBatch = feedlot.cattle.splice( 0, saleBatchSize);
       // create Sale event
       sim.scheduleEvent( new Sale({
         feedlot: 1,
         pricePerKg: sim.v.carcassPricePerKg,
         cattle: feedlotExitBatch
       }));
-      feedlot.atFeedlotExitAge -= saleBatchSize;
     }
   });
-}
+};
 
 /*******************************************************
  Define Initial State
 ********************************************************/
 sim.scenario.initialState.objects = {
-  "1": {typeName: "Feedlot", name:"feedlot", capacity: 500, liquidity: 500,
-        feedCostsPerDay: 3.2/1000, fixedCostsPerDay: 1000/1000,
+  "1": {typeName: "Feedlot", name:"feedlot", capacity: 500, liquidity: 500000,
+        feedCostsPerDay: 3.2, fixedCostsPerDay: 500,
         cattle:[], potSuppliers: [], prefSuppliers: []}
 };
 sim.scenario.setupInitialState = function () {
@@ -277,7 +275,7 @@ sim.scenario.setupInitialState = function () {
       }
     }
     // negative values mean c1 comes before c2
-    breeder.cattle.sort( (c1,c2) => c1.bornOn - c2.bornOn)
+    breeder.cattle.sort( (c1,c2) => c1.bornOn - c2.bornOn);
   }
 };
 /*******************************************************
@@ -287,7 +285,7 @@ sim.model.statistics = {
   "feedlotStockSize": {range:"NonNegativeInteger", showTimeSeries: true,
     label:"Feedlot stock size", expression: () => sim.objects["1"].cattle.length
   },
-  "liquidity": {objectType:"Feedlot", objectIdRef: 1, unit:"TAUD",
+  "liquidity": {objectType:"Feedlot", objectIdRef: 1, timeSeriesScalingFactor: 0.0001, unit:"AUD",
     property:"liquidity", showTimeSeries: true, label:"Feedlot liquidity"},
   "atFeedlotExitAge": {objectType:"Feedlot", objectIdRef: 1,
     property:"atFeedlotExitAge", showTimeSeries: true, label:"atFeedlotExitAge"},

@@ -13,11 +13,12 @@ var Sale = new cLASS({
   methods: {
     "onEvent": function () {
       var followupEvents=[], c=null;
+      this.feedlot.atFeedlotExitAge -= this.cattle.length;
       for (let i=0; i < this.cattle.length; i++) {
         c = this.cattle[i];
         c.phase = CattlePhaseEL.SLAUGHTERED;
         c.carcassWeight = c.weight * sim.v.carcassWeightFactor;
-        this.feedlot.liquidity += c.carcassWeight * this.pricePerKg / 1000;
+        this.feedlot.liquidity += c.carcassWeight * this.pricePerKg;
         // update statistics
         sim.stat.nmrOfExits++;
         sim.stat.cumulativeExitWeight += c.weight;
