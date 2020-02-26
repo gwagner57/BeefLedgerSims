@@ -21,12 +21,12 @@ var Purchase = new cLASS({
         sim.stat.nmrOfEntries++;
         sim.stat.cumulativeEntryWeight += c.weight;
         // test if purchased cattle has already passed feedlot exit age
-        if (sim.time - c.bornOn >= sim.v.feedlotExitAge*30) {
+        if (sim.time - c.bornOn >= sim.v.feedlotEntryAgeThreshold * 30) {
           this.feedlot.atFeedlotExitAge++;
         }
       }
-      this.feedlot.cattle.push(...this.cattle); // appending the array this.cattle
-      this.feedlot.liquidity -= this.batchPrice;
+      this.feedlot.cattle.push(...this.cattle);  // appending the array this.cattle
+      this.feedlot.liquidity -= this.batchPrice / 1000;
       return followupEvents;
     }
   }

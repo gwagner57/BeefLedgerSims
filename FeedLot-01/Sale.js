@@ -17,10 +17,14 @@ var Sale = new cLASS({
         c = this.cattle[i];
         c.phase = CattlePhaseEL.SLAUGHTERED;
         c.carcassWeight = c.weight * sim.v.carcassWeightFactor;
-        this.feedlot.liquidity += c.carcassWeight * this.pricePerKg;
+        this.feedlot.liquidity += c.carcassWeight * this.pricePerKg / 1000;
         // update statistics
         sim.stat.nmrOfExits++;
         sim.stat.cumulativeExitWeight += c.weight;
+        if (sim.stat.minSalesBatchSize === 0) sim.stat.minSalesBatchSize = this.cattle.length;
+        else sim.stat.minSalesBatchSize = Math.min( sim.stat.minSalesBatchSize, this.cattle.length);
+        if (sim.stat.maxSalesBatchSize === 0) sim.stat.maxSalesBatchSize = this.cattle.length;
+        else sim.stat.maxSalesBatchSize = Math.max( sim.stat.maxSalesBatchSize, this.cattle.length);
       }
       return followupEvents;
     }

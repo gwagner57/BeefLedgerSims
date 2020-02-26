@@ -6,7 +6,7 @@ var Cattle = new cLASS({
   shortLabel: "catl",
   supertypeName: "oBJECT",
   properties: {
-    "bornOn": { range: "NonNegativeInteger", label: "Born on", shortLabel: "born"},
+    "bornOn": { range: "Integer", label: "Born on", shortLabel: "born"},
     "weight": { range: "PositiveDecimal", displayDecimalPlaces:2, label: "Weight", shortLabel: "weight"},
     "phase": { range: CattlePhaseEL, label: "Phase", shortLabel: "phase"},
     "carcassWeight": { range: "PositiveDecimal", displayDecimalPlaces:2, label: "Carcass weight", shortLabel: "carcwt", optional:true},

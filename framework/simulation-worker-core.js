@@ -1030,9 +1030,9 @@ cLASS.isIntegerType = function (T) {
  cLASS.check = function (fld, decl, val, optParams) {
    var constrVio=null, valuesToCheck=[],
        msg = decl.patternMessage || "",
-       minCard = decl.minCard!=="umdefined" ? decl.minCard : decl.optional?0:1,  // by default, a property is mandatory
+       minCard = decl.minCard !== "undefined" ? decl.minCard : decl.optional?0:1,  // by default, a property is mandatory
        maxCard = decl.maxCard || 1,  // by default, a property is single-valued
-       min = decl.min || 0, max = decl.max,
+       min = decl.min, max = decl.max,
        range = decl.range,
        pattern = decl.pattern;
    // check Mandatory Value Constraint
@@ -1389,8 +1389,8 @@ cLASS.isIntegerType = function (T) {
        }
      });
    }
-   if (range === "Integer" || range === "NonNegativeInteger" ||
-       range === "PositiveInteger") {
+   // check Interval Constraints
+   if (cLASS.range2JsDataType( range) === "number") {
      valuesToCheck.forEach( function (v) {
        if (min !== undefined && v < min) {
          constrVio = new IntervalConstraintViolation( fld +
@@ -4689,7 +4689,7 @@ oes.stat.updateStatistics = function () {
  * @param statVar  the statistics variable declaration
  */
 oes.stat.updateStatisticsVariable = function (statVar) {
-  var varName = statVar.name, valueAtCurrentStep;
+  var varName = statVar.name, valueAtCurrentStep=0, v=0;
   var cellsOnX = 0, cellsOnY = 0, i = 0, j = 0;
   var grid=null, sum=0, pName="", OT=null;
   // expression/function is used to compute the value
@@ -4738,18 +4738,19 @@ oes.stat.updateStatisticsVariable = function (statVar) {
   else sim.stat[varName] = valueAtCurrentStep;
   // check if the variable's time series has to be stored/returned
   if (statVar.createTimeSeries) {
+    if (!statVar.timeSeriesScalingFactor) v = sim.stat[varName];
+    else v = sim.stat[varName] * statVar.timeSeriesScalingFactor;
     if (sim.timeIncrement) {
       //sim.stat.timeSeries[varName][sim.step] = sim.stat[varName];
-      sim.stat.timeSeries[varName].push( sim.stat[varName]);
+      sim.stat.timeSeries[varName].push(v);
       if (oes.stat.timeSeriesCompressionSteps > 1
           && sim.step % oes.stat.timeSeriesCompressionSteps === 0) {
         oes.stat.compressTimeSeries( sim.stat.timeSeries[varName]);
       }
     } else {  // next-event time progression
       sim.stat.timeSeries[varName][0][sim.step] = sim.time;
-      // TODO: check how we can average steps for time progression case
-      sim.stat.timeSeries[varName][1][sim.step] = sim.stat[varName];
-      // TODO: check how we can average statistic values for time progression case
+      // TODO: how to interpolate for implementing time series compression
+      sim.stat.timeSeries[varName][1][sim.step] = v;
     }
   }
   // assign current value to previous value
