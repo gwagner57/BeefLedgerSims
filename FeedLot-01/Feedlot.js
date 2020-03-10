@@ -4,7 +4,9 @@ var Feedlot = new cLASS({
   supertypeName: "oBJECT",
   properties: {
     "capacity": { range: "PositiveInteger", label: "Capacity"},
-    "liquidity": { range: "Decimal", label: "Liquidity (TAUD)"},
+    "liquidity": { range: "Decimal", label: "Liquidity"},
+    "annualProfit": {range: "Decimal", label: "Annual profit", shortLabel: "temp",
+      decimalPlaces: 1, historySize: 5},
     "fixedCostsPerDay": { range: "Decimal", label: "Fixed costs / day",
         hint: "Fixed costs per day (TAUD)"},
     "feedCostsPerDay": { range: "Decimal", label: "Feed costs / day",

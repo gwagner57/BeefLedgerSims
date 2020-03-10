@@ -21,8 +21,8 @@ var DwgModelTypeEL = new eNUMERATION( "DwgModelTypeEL",
 
 sim.model.v.DwgModelType =  {  // 1 = constant DWG, 2 = age-based DWG
   range: DwgModelTypeEL,
-  label: "DWG model type",
-  hint: "Daily Weight Gain (DWG) model",
+  label: "Daily Weight Gain (DWG) model type",
+  hint: "How the Daily Weight Gain (DWG) is modeled",
   initialValue: 1
 };
 sim.model.v.birthWeightAverage =  {
@@ -109,6 +109,8 @@ sim.model.v.purchaseMinBatchSize =  {
 sim.model.v.purchasePricePerKg =  {
   range: "Decimal",
   decimalPlaces: 2,
+  unit: "AUD",
+  label: "Purchase price/kg",
   hint: "Purchase price per kg (AUD)",
   initialValue: 3.00
 };
@@ -146,10 +148,10 @@ sim.model.v.carcassWeightFactor =  {
 sim.model.f.DWG = function (age) {
   const entryAge = sim.v.feedlotEntryAgeThreshold;
   if (age < (entryAge + 1) * 30) return rand.normal( 1400, 300);
-  else if (age < (entryAge + 2) * 30) return rand.normal( 1300, 300);
-  else if (age < (entryAge + 3) * 30) return rand.normal( 1200, 300);
-  else if (age < (entryAge + 4) * 30) return rand.normal( 1100, 300);
-  else return rand.normal( 1000, 300);
+  else if (age < (entryAge + 2) * 30) return rand.normal( 1200, 300);
+  else if (age < (entryAge + 3) * 30) return rand.normal( 1000, 300);
+  else if (age < (entryAge + 4) * 30) return rand.normal( 800, 300);
+  else return rand.uniformInt( 0, 500);
 };
 /***************************************************************************/
 sim.model.OnEachTimeStep = function () {
@@ -232,6 +234,14 @@ sim.model.OnEachTimeStep = function () {
     // deduct daily feed costs and fixed costs from liquidity
     feedlot.liquidity -= feedlot.feedCostsPerDay * feedlot.cattle.length;
     feedlot.liquidity -= feedlot.fixedCostsPerDay;
+    if (sim.time % 360 === 1) {
+      sim.stat.liquidityValueAtStartOfYear = feedlot.liquidity;
+    }
+    if (sim.time % 360 === 0) {
+      sim.stat.liquidityValueAtEndOfYear = feedlot.liquidity;
+      sim.stat.annualProfits.push( sim.stat.liquidityValueAtEndOfYear -
+          sim.stat.liquidityValueAtStartOfYear);
+    }
     // test if Sale event needs to be created
     if (feedlot.atFeedlotExitAge >= sim.v.saleMinBatchSize &&
         !sim.FEL.getEventsOfType("Sale").some( function (evt) {
@@ -255,12 +265,6 @@ sim.model.OnEachTimeStep = function () {
       }));
     }
   });
-  if (sim.time === 361) {
-    sim.stat.liquidityStartOfYear1 = sim.objects["1"].liquidity;
-  }
-  if (sim.time === 720) {
-    sim.stat.liquidityEndOfYear1 = sim.objects["1"].liquidity;
-  }
 };
 
 /*******************************************************
@@ -317,15 +321,14 @@ sim.scenario.setupInitialState = function () {
  ********************************************************/
 sim.model.statistics = {
   "feedlotStockSize": {range:"NonNegativeInteger", showTimeSeries: true,
-    label:"Feedlot stock size", expression: () => sim.objects["1"].cattle.length
+      label:"Feedlot stock size", expression: () => sim.objects["1"].cattle.length
   },
   "liquidity": {objectType:"Feedlot", objectIdRef: 1, timeSeriesScalingFactor: 0.0001, unit:"AUD",
-    property:"liquidity", showTimeSeries: true, label:"Feedlot liquidity"},
-  "liquidityStartOfYear1": {range:"Decimal"},
-  "liquidityEndOfYear1": {range:"Decimal"},
-  "profitYear1": { range: "Decimal",  label:"Profit in year 1",
-    computeOnlyAtEnd: true, decimalPlaces: 0, unit: "AUD",
-    expression: () => sim.stat.liquidityEndOfYear1 - sim.stat.liquidityStartOfYear1
+      property:"liquidity", showTimeSeries: true, label:"Feedlot liquidity"},
+  "liquidityValueAtStartOfYear": {range:"Decimal"},
+  "liquidityValueAtEndOfYear": {range:"Decimal"},
+  "annualProfits": { range: Array,  label:"Annual profit (AUD)",
+    decimalPlaces: 0, initialValue: []
   },
   /*
   "atFeedlotExitAge": {objectType:"Feedlot", objectIdRef: 1,
@@ -349,6 +352,14 @@ sim.model.statistics = {
   */
   //"minSalesBatchSize": {range:"NonNegativeInteger",  label:"Min. sales batch size"},
   "maxSalesBatchSize": {range:"NonNegativeInteger",  label:"Max. sales batch size"},
+  "cumulativeExitAge": {range:"NonNegativeInteger"},
+  "avgAgeAtExit": { range: "Decimal",  label:"Avg. age at exit",
+    computeOnlyAtEnd: true, decimalPlaces: 1, unit: "mo",
+    expression: () => sim.stat.cumulativeExitAge / sim.stat.nmrOfExits
+  },
+  "maxExitAge": { range: "Decimal",  label:"Max. age at exit",
+    decimalPlaces: 1, unit: "mo"
+  },
 };
 
 /*******************************************************

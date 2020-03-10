@@ -974,7 +974,10 @@ function cLASS (classSlots) {
   // return the constructor as the object constructed with new cLASS
   return constr;
 }
- /**
+ cLASS.integerTypes = ["Integer","PositiveInteger","NonNegativeInteger","AutoIdNumber"];
+ cLASS.decimalTypes = ["Number","Decimal","Percent","ClosedUnitInterval","OpenUnitInterval"];
+ cLASS.numericTypes = cLASS.integerTypes.concat( cLASS.decimalTypes);
+     /**
   * Determine if a type is an integer type.
   * @method
   * @author Gerd Wagner
@@ -982,10 +985,9 @@ function cLASS (classSlots) {
   * @return {boolean}
   */
 cLASS.isIntegerType = function (T) {
-  return ["Integer","PositiveInteger","AutoIdNumber","NonNegativeInteger"].includes(T) ||
-      T instanceof eNUMERATION;
+  return cLASS.integerTypes.includes(T) || T instanceof eNUMERATION;
 };
- /**
+/**
   * Determine if a type is a decimal type.
   * @method
   * @author Gerd Wagner
@@ -993,7 +995,7 @@ cLASS.isIntegerType = function (T) {
   * @return {boolean}
   */
  cLASS.isDecimalType = function (T) {
-   return ["Number","Decimal","Percent","ClosedUnitInterval","OpenUnitInterval"].includes(T);
+   return cLASS.decimalTypes.includes(T);
  };
  /**
   * Constants
@@ -6306,6 +6308,8 @@ oes.stat.initialize = function () {
     // is variable bound to an aggregate over an ObjectType population?
     statVar.isBoundToPopulationAggregate =
         (!statVar.objectIdRef && statVar.property && OT);
+    // is output statistics with simple numeric values?
+    statVar.isSimpleOutputStatistics = (statVar.label && cLASS.numericTypes.includes( statVar.range));
     // determine Integer range
     if (statVar.range) {
       statVar.hasIntegerRange = cLASS.isIntegerType( statVar.range);
@@ -6575,6 +6579,9 @@ oes.stat.summary = {
 /*
 Improvements/extensions
 v1
+ - Distinguish between "model variable" versus "model parameter" (as in AnyLogic)
+ - Split up the current initialize statistics into a setup and a (trimmed) initialize procedure,
+   such that the setup is called before an experiment and only the initialize is called for each run
  -  (1) merge AT.fixedDuration and AT.randomDuration() into AT.duration()
     (2) rename the property "resources" to "resourceRoles"
     (3) rename the property "actor" to "performer" 
@@ -6595,8 +6602,6 @@ v1
 
  - make a sims/basic-tests.html that invokes one or more seeded scenario simulations and checks statistics results
  - Define set/get for scenario.visualize and use the setter for dropping/setting-up the visualization (canvas)
-
- - Allow designating the dynamic properties of an object similar to the AnyLogic distinction between "variable" versus "parameter"
 
  - run experiment scenarios in parallel worker threads using the navigator.hardwareConcurrency information
    (see https://developer.mozilla.org/en-US/docs/Web/API/NavigatorConcurrentHardware/hardwareConcurrency)
@@ -6856,7 +6861,7 @@ sim.updateInitialStateObjects = function () {
 };
 /*************************************************************
  * Initialize the simulator on start up
- * Settings that do not vary across scenarios in an experiment
+ * Settings that do not vary across scenario runs in an experiment
  ************************************************************/
 sim.initializeSimulator = function (dbName) {
   var x=0, i=0;
@@ -7225,13 +7230,18 @@ sim.runExperiment = async function () {
   }
   if (N === 0) {  // simple experiment (without parameters)
     cp = [[]];  // only 1 empty parameter value combination
+    M = cp.length;  // size of cartesian product
     // initialize replication statistics record
     exp.replicStat = {};
     Object.keys( sim.model.statistics).forEach( function (varName) {
-      if (sim.model.statistics[varName].label) {  // output statistics
+      var statVar = sim.model.statistics[varName];
+      // is output statistics with simple numeric values?
+      statVar.isSimpleOutputStatistics = statVar.label && (!statVar.range || cLASS.numericTypes.includes( statVar.range));
+      if (statVar.isSimpleOutputStatistics) {
         exp.replicStat[varName] = [];  // an array per statistics variable
       }
     });
+    tenthRunLength = exp.replications > 10 ? Math.floor( exp.replications / 10) : 1;
   } else {
     for (i=0; i < N; i++) {
       expPar = exp.parameterDefs[i];
@@ -7246,9 +7256,9 @@ sim.runExperiment = async function () {
       valueSets.push( expPar.values);
     }
     cp = util.cartesianProduct( valueSets);
+    M = cp.length;  // size of cartesian product
+    tenthRunLength = Math.min( 1, Math.floor((M * exp.replications) / 10));
   }
-  M = cp.length;  // size of cartesian product
-  tenthRunLength = (M * exp.replications) / 10;
   nextProgressIncrementStep = tenthRunLength;
   // loop over all combinations of experiment parameter values
   for (i=0; i < M; i++) {
@@ -7293,14 +7303,14 @@ sim.runExperiment = async function () {
         // for the first replication, initialize experiment scenario statistics
         if (k === 0) {
           Object.keys( sim.model.statistics).forEach( function (varName) {
-            if (sim.model.statistics[varName].label) {  // output statistics
+            if (sim.model.statistics[varName].isSimpleOutputStatistics) {
               exp.scenarios[i].stat[varName] = 0;
             }
           } );
         }
         // aggregate replication statistics from sim.stat to sim.experiment.scenarios[i].stat
         Object.keys( sim.model.statistics).forEach( function (varName) {
-          if (sim.model.statistics[varName].label) {  // output statistics
+          if (sim.model.statistics[varName].isSimpleOutputStatistics) {
             exp.scenarios[i].stat[varName] += sim.stat[varName];
           }
         });
@@ -7313,29 +7323,37 @@ sim.runExperiment = async function () {
             outputStatistics: Object.assign({}, sim.stat)  // clone
           });
         }
+        // update progress bar
+        if ((i+1) * exp.replications >= nextProgressIncrementStep) {
+          self.postMessage({progressIncrement: 10});
+          nextProgressIncrementStep += tenthRunLength;
+        }
       } else {  // simple experiment
         // store replication statistics
-        Object.keys( sim.model.statistics).forEach( function (varName) {
-          if (sim.model.statistics[varName].label) {  // output statistics
+        Object.keys( exp.replicStat).forEach( function (varName) {
+          exp.replicStat[varName][k] = sim.stat[varName];
+          /*
+          if (sim.model.statistics[varName].isSimpleOutputStatistics) {
             exp.replicStat[varName][k] = sim.stat[varName];
           }
+          */
         });
         await sim.storeMan.add( oes.ExperimentScenarioRun, {
-          id: expRunId + i * exp.replications + k + 1,
+          id: expRunId + k + 1,
           experimentRun: expRunId,
           outputStatistics: Object.assign({}, sim.stat)  // clone
         });
-      }
-      // update the progress bar
-      if (i*k > nextProgressIncrementStep) {
-        self.postMessage({progressIncrement: 10});
-        nextProgressIncrementStep += tenthRunLength;
+        // update progress bar
+        if (k+1 >= nextProgressIncrementStep) {
+          self.postMessage({progressIncrement: 10});
+          nextProgressIncrementStep += tenthRunLength;
+        }
       }
     }
     if (N === 0) {  // simple experiment (without parameters)
-      // aggregate replication statistics in sim.experiment.scenarios[i].stat
-      Object.keys( sim.model.statistics).forEach( function (varName) {
-        if (sim.model.statistics[varName].label) {  // output statistics
+      // aggregate replication statistics in sim.experiment.scenarios[0].stat
+      Object.keys( exp.replicStat).forEach( function (varName) {
+        if (sim.model.statistics[varName].isSimpleOutputStatistics) {
           if (!sim.model.statistics[varName].hasRecordRange) {
             exp.scenarios[i].stat[varName] = {};
             Object.keys( oes.stat.summary).forEach( function (aggr) {
@@ -7355,8 +7373,8 @@ sim.runExperiment = async function () {
         expScenParamValues: exp.scenarios[i].parameterValues,
         expScenStat: exp.scenarios[i].stat
       });
+      // store the average statistics aggregated over all exp. scenario runs
       if (!exp.storeEachExperimentScenarioRun) {
-        // store the average statistics aggregated over all exp. scenario runs
         try {
           await sim.storeMan.add( oes.ExperimentScenarioRun, {
             experimentRun: expRunId,
@@ -7982,8 +8000,7 @@ oes.ui.setupUI = function () {
           }
         },
         "restart": function () {
-          var scenarioRunStepBtn = document.forms["scenario"].elements["run step"],
-              simRunStepBtn = document.forms["sim"].elements["run step"];
+          var scenarioRunStepBtn = null, simRunStepBtn = null;
           document.getElementById("sim").remove();
           ["scenario","experiment","visCanvas","expost-statistics","simLogTbl"].forEach( function (elemID) {
             if (document.getElementById( elemID)) document.getElementById( elemID).remove();
@@ -7993,6 +8010,8 @@ oes.ui.setupUI = function () {
           oes.setupFrontEndSimEnv();
           sim.step = 0;
           sim.stepIncrement = 1;  // for single-step(s) mode
+          scenarioRunStepBtn = document.forms["scenario"].elements["run step"];
+          simRunStepBtn = document.forms["sim"].elements["run step"];
           simRunStepBtn.title = scenarioRunStepBtn.title = i18n.t("Execute a single simulation step");
         }
       }
@@ -8097,7 +8116,7 @@ oes.ui.setupSimLog = function (isExperiment) {
     el.classList.add("expStatistics");
     Object.keys( sim.model.statistics).forEach( function (v) {
       var unit="", label = sim.model.statistics[v].label;
-      if (label) {
+      if (sim.model.statistics[v].isSimpleOutputStatistics) {
         unit = sim.model.statistics[v].unit;
         if (unit) unit = " ["+ unit +"]";
         else unit = "";
@@ -8216,15 +8235,17 @@ oes.ui.showExPostStatistics = function () {
     }
   }
   Object.keys( statistics).forEach( function (varName) {
-    var lbl = statistics[varName].label,
-        unit = statistics[varName].unit || "",
-        tsScaleFactor = statistics[varName].timeSeriesScalingFactor,
+    var statVarDecl = statistics[varName],
+        val = sim.stat[varName],
+        lbl = statVarDecl.label,
+        unit = statVarDecl.unit || "",
+        tsScaleFactor = statVarDecl.timeSeriesScalingFactor,
         tsScalFactorLbl = "",
         decPl = 2,  // default
         i=0, legendLabel = '';
     var dataY=[];
     if (lbl) {
-      if (statistics[varName].showTimeSeries) {
+      if (statVarDecl.showTimeSeries) {
         if (tsScaleFactor) {
           tsScalFactorLbl = String( 1/tsScaleFactor);
         }
@@ -8238,12 +8259,18 @@ oes.ui.showExPostStatistics = function () {
         }
         chartSeries.push({name: lbl, data: dataY});
       } else {
-        if (statistics[varName].decimalPlaces) {
-          decPl = statistics[varName].decimalPlaces;
+        if (Array.isArray( val)) {
+          decPl = statVarDecl.decimalPlaces || 0;
+          // format each number and concatenate them to a display string
+          displayStr = val.map( function (v) {
+            return (new Intl.NumberFormat( locale, {maximumFractionDigits: decPl})).format(v);
+          }).reduce( function (outputStr, v) {return outputStr +" | "+ v});
+        } else if (statVarDecl.decimalPlaces) {
+          decPl = statVarDecl.decimalPlaces;
           displayStr = new Intl.NumberFormat( locale, {maximumFractionDigits: decPl}).
-              format( sim.stat[varName]);
-        } else displayStr = numFmt.format( sim.stat[varName]);
-        if (statistics[varName].unit) displayStr += " " + statistics[varName].unit;
+              format( val);
+        } else displayStr = numFmt.format( val);
+        if (statVarDecl.unit) displayStr += " " + statVarDecl.unit;
         document.forms["expost-statistics"].elements[varName].value = displayStr;
       }
     }
@@ -8355,7 +8382,7 @@ oes.ui.setupModelVariablesUI = function (parentEl) {
       sim.config.modelVariablesUI.userActions
   ));
   parentEl.appendChild( uiPanelEl);
-}
+};
 /*******************************************************
  UI for defining the initial state objects
  *******************************************************
@@ -8392,13 +8419,15 @@ oes.ui.setupInitialObjectsUI = function (parentEl) {
   });
   sim.scenario.initialStateUI.userActions = {
     "applyChanges": function () {
-      alert("Changing the initial state is not yet implemented!"); return;
+      alert("Changing the initial state is not yet implemented!");
+      /*
       sim.updateInitialStateObjects();
       sim.createInitialObjEvt();
       if (sim.config.visualize) {
         oes.ui.resetCanvas();
         oes.ui.visualizeStep();  // visualize initial state
       }
+      */
     }
   };
   sim.scenario.initialStateUI.userActions["applyChanges"].label = i18n.t("Apply changes");
@@ -8510,17 +8539,22 @@ oes.ui.setupExperimentsUI = function (parentEl) {
               });
             }
             function logSimpleExpRun( data) {
-              var rowEl=null, i=0;
-              var nmrOfReplications = data.expReplicStat[Object.keys( data.expReplicStat)[0]].length;
+              var nmrOfReplications=0, rowEl=null, i=0;
+              var locale = i18n.accessLang ? i18n.accessLang : "en-US";
+              if (Object.keys( data.expReplicStat).length === 0) return;
+              else nmrOfReplications = data.expReplicStat[Object.keys( data.expReplicStat)[0]].length;
               for (i=0; i < nmrOfReplications; i++) {
                 rowEl = tbodyEl.insertRow();  // create new table row
                 rowEl.insertCell().textContent = i+1;  // replication No
                 Object.keys( data.expReplicStat).forEach( function (varName    ) {
                   var range = sim.model.statistics[varName].range,
-                      val = data.expReplicStat[varName][i];
-                  if (cLASS.isIntegerType(range)) val = parseInt( val);
-                  else val = val.toFixed( oes.defaults.expostStatDecimalPlaces);
-                  rowEl.insertCell().textContent = val;
+                      val = data.expReplicStat[varName][i],
+                      decPl = sim.model.statistics[varName].decimalPlaces || oes.defaults.expostStatDecimalPlaces;
+                  if (typeof val === "number") {
+                    if (cLASS.isIntegerType(range)) val = parseInt(val);
+                    else val = (new Intl.NumberFormat( locale, {maximumFractionDigits: decPl})).format(val);
+                    rowEl.insertCell().textContent = val;
+                  }
                 });
               }
               // create footer with summary statistics
@@ -8528,11 +8562,15 @@ oes.ui.setupExperimentsUI = function (parentEl) {
                 rowEl = tbodyEl.insertRow();  // create new table row
                 rowEl.insertCell().textContent = oes.stat.summary[aggr].label;
                 Object.keys( data.expScenStat).forEach( function (varName) {
-                  var range = sim.model.statistics[varName].range,
+                  var statVar = sim.model.statistics[varName],
+                      range = statVar.range,
+                      decPl = statVar.decimalPlaces || oes.defaults.expostStatDecimalPlaces,
                       val = data.expScenStat[varName][aggr];
-                  if (cLASS.isIntegerType(range)) val = parseInt(val);
-                  else val = val.toFixed( oes.defaults.expostStatDecimalPlaces);
-                  rowEl.insertCell().textContent = val;
+                  if (statVar.isSimpleOutputStatistics) {
+                    if (cLASS.isIntegerType( range)) val = parseInt(val);
+                    else val = (new Intl.NumberFormat( locale, {maximumFractionDigits: decPl})).format(val);
+                    rowEl.insertCell().textContent = val;
+                  }
                 });
               });
               /*
