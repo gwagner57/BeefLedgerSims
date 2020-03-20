@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+<head>
+ <meta charset="UTF-8" />
+ <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+ <title>BeefCattleSupplyChain-01 Object Event Simulation Example</title>
+ <meta name="viewport" content="width=device-width, initial-scale = 1.0" />
+<!--
+ <link href="https://gwagner57.github.io/BeefLedgerSims/FeedLot-01/" rel="canonical"/>
+-->
+ <meta name="description"
+       content="A model of a beef cattle supply chain where feedlots buy cattle from breeders, feed them until a certain age and then sell them to a slaughterhouse."/>
+ <!-- Facebook Open Graph annotations -->
+ <meta property="og:site_name" content="BeefCattleSupplyChain-1"/>
+ <meta property="og:title" content="A Beef Cattle Supply Chain with Breeders and Feedlots"/>
+ <meta property="og:locale" content="en" />
+ <meta property="og:description"
+       content="A model of a beef cattle supply chain where feedlots buy cattle from breeders, feed them until a certain age and then sell them to a slaughterhouse"/>
+ <meta property="og:url" content="https://gwagner57.github.io/BeefLedgerSims/BeefCattleSupplyChain-01/"/>
+ <meta property="og:image" content="https://sim4edu.com/img/sim4edu.png"/>  <!-- recommended 1200 x 630 -->
+ <meta name="twitter:card" content="summary_large_image">
+
+ <link rel="icon" type="image/png" href="https://sim4edu.com/img/icon-32x32.png" sizes="32x32">
+ <link rel="icon" type="image/png" href="https://sim4edu.com/img/icon-16x16.png" sizes="16x16">
+
+ <link rel="stylesheet" type="text/css" href="../framework/simulator-core.css" />
+ <link rel="stylesheet" type="text/css" href="../framework/chartist.css" />
+ <style id="page-styles">
+  form#expost-statistics output {left: 16em;}
+  #frontMatter > h1 {font-size: 2em;}  /* 2em/1.4em for short/long headings */
+ </style>
+ <!-- Load polyfills for supporting >=IE9 -->
+ <script crossorigin="anonymous"
+         src="https://polyfill.io/v3/polyfill.min.js?features=Array.from%2CArray.of%2CArray.prototype.find%2CArray.prototype.includes%2CDOMTokenList%2CElement.prototype.after%2CElement.prototype.before%2CElement.prototype.classList%2CElement.prototype.cloneNode%2CIntl%2CNumber.isInteger%2CObject.keys%2CObject.values%2CPromise%2CString.prototype.endsWith%2CString.prototype.includes%2CURL%2Cconsole.log%2Cfetch"></script>
+</head>
+<body>
+<div id="frontMatter">
+ <div id="sim4eduinfo">Created with the <i>Object Event Simulation (OES)</i> framework <b><i>OESjs</i></b> available from
+  <a href='https://sim4edu.com'>sim4edu.com</a>.</div>
+   <div id="share"><button id="share-this" title="Share this">Share...</button>
+    <ul class='links'>
+ <li class='share facebook' title="Share on Facebook"><svg aria-hidden="true" class="icon-social"><symbol id="social-facebook" viewBox="0 0 18 18"><path d="M15.7,1.5H2.3c-0.5,0-0.8,0.4-0.8,0.8v13.3c0,0.5,0.4,0.8,0.8,0.8h7.2v-5.8h-2V8.4h2V6.8c0-1.9,1.2-3,2.9-3 c0.8,0,1.5,0.1,1.7,0.1v2l-1.2,0c-0.9,0-1.1,0.4-1.1,1.1v1.4h2.2l-0.3,2.3h-1.9v5.8h3.8c0.5,0,0.8-0.4,0.8-0.8V2.3 C16.5,1.9,16.1,1.5,15.7,1.5z"></path></symbol><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#social-facebook"/></svg></li>
+ <li class='share twitter' title="Share on Twitter"><svg aria-hidden="true" class="icon-social"><symbol id="social-twitter" viewBox="0 0 18 18"><path d="M16.5,4.3c-0.6,0.2-1.1,0.4-1.8,0.5c0.6-0.4,1.1-1,1.4-1.7c-0.6,0.4-1.3,0.6-2,0.8c-0.6-0.6-1.4-1-2.2-1 c-1.7,0-3.1,1.4-3.1,3.1c0,0.2,0,0.5,0.1,0.7C6.3,6.5,4.1,5.3,2.5,3.4C2.3,3.9,2.1,4.4,2.1,5c0,1.1,0.5,2,1.4,2.6 c-0.5,0-1-0.2-1.4-0.4c0,0,0,0,0,0c0,1.5,1.1,2.8,2.5,3.1c-0.3,0.1-0.5,0.1-0.8,0.1c-0.2,0-0.4,0-0.6-0.1c0.4,1.2,1.5,2.1,2.9,2.2 c-1.1,0.8-2.4,1.3-3.8,1.3c-0.2,0-0.5,0-0.7,0c1.4,0.9,3,1.4,4.7,1.4c5.7,0,8.8-4.7,8.8-8.9c0-0.1,0-0.3,0-0.4 C15.6,5.5,16.1,4.9,16.5,4.3"></path></symbol><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#social-twitter"/></svg></li>
+ <li class='share linkedin' title="Share on LinkedIn"><svg aria-hidden="true" class="icon-social"><symbol id="social-linkedin" viewBox="0 0 18 18"><path d="M15.4,1.5H2.6C2,1.5,1.5,2,1.5,2.6v12.8c0,0.6,0.5,1.1,1.1,1.1h12.8c0.6,0,1.1-0.5,1.1-1.1V2.6C16.5,2,16,1.5,15.4,1.5z M3.8,7.1H6v7.2H3.8V7.1z M4.9,6.1c-0.7,0-1.3-0.6-1.3-1.3c0-0.7,0.6-1.3,1.3-1.3c0.7,0,1.3,0.6,1.3,1.3C6.2,5.6,5.6,6.1,4.9,6.1z M14.5,14.3h-2.3v-3.5c0-0.8,0-1.9-1.2-1.9c-1.2,0-1.4,0.9-1.4,1.8v3.5H7.4V7.1h2.2v1h0c0.3-0.6,1-1.2,2.1-1.2 c2.3,0,2.7,1.5,2.7,3.4V14.3z"></path></symbol><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#social-linkedin"/></svg></li>
+ <li class='share email' title="Share with Email"><a aria-label="Share with Email" href="" target="_blank"><svg aria-hidden="true" class="icon-social"><symbol id="social-mail" viewBox="0 0 18 18"><path d="M9,8.2L3,4.5h12L9,8.2z M15,13.5H3V6l6,3.8L15,6V13.5z M15,3H3C2.2,3,1.5,3.7,1.5,4.5l0,9C1.5,14.3,2.2,15,3,15 h12c0.8,0,1.5-0.7,1.5-1.5v-9C16.5,3.7,15.8,3,15,3z"></path></symbol><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#social-mail"/></svg></a></li>
+    </ul>
+   </div>
+ <h1>A Beef Cattle Supply Chain with Breeders and Feedlots<a href="description.html">Read more...</a></h1>
+</div>
+<main>
+ <div id="model-menu">
+  <button type='button' onclick='oes.ui.showNarrative()'>Narrative</button>
+  <button type='button' onclick='oes.ui.showDescription()'>Description</button>
+  <button id='showCodeBtn' type='button' onclick='oes.ui.showCode()'>Code</button>
+ </div>
+</main>
+<noscript>
+ <p>Please turn on JavaScript in your browser. Otherwise you cannot run Sim4edu simulations.</p>
+</noscript>
+<script src="metadata.js"></script>
+<script src="../framework/frontMatter.js"></script>
+<!-- load common core JS code files -->
+<script src="../framework/simulator-core.js" async="async"></script>
+<script src="../framework/chartist.js" async="async"></script>
+<!-- load scenario.js and all files required by it, and set up the user interface -->
+<script src="../loadManager.js"></script>
+</body>
+</html>

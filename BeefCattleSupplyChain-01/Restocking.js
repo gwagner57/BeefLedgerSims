@@ -6,11 +6,11 @@ var Restocking = new cLASS({
   shortLabel: "restock",
   supertypeName: "eVENT",
   properties: {
-    "feeder": {range: "Feeder"}
+    "feedlot": {range: "Feedlot"}
   },
   methods: {
     "onEvent": function () {
-      var followupEvents=[], calve=null;
+      var followupEvents=[];
       return followupEvents;
     }
   }
