@@ -400,27 +400,32 @@ sim.model.statistics = {
   "liquidityFeedlot1": {objectType:"Feedlot", objectIdRef: 1, timeSeriesScalingFactor: 0.0001, unit:"AUD",
       property:"liquidity", showTimeSeries: true, label:"Feedlot 1 liquidity"},
   "liquidityFeedlot2": {objectType:"Feedlot", objectIdRef: 2, timeSeriesScalingFactor: 0.0001, unit:"AUD",
-    property:"liquidity", showTimeSeries: true, label:"Feedlot 2 liquidity"},
+      property:"liquidity", showTimeSeries: true, label:"Feedlot 2 liquidity"},
+  "capacityFeedlot1": {objectType:"Feedlot", objectIdRef: 1, property:"capacity",
+      computeOnlyAtEnd: true, label:"Feedlot 1 capacity"},
+  "capacityFeedlot2": {objectType:"Feedlot", objectIdRef: 2, property:"capacity",
+      computeOnlyAtEnd: true, label:"Feedlot 2 capacity"},
+
   "cumulativeEntryWeight": {range:"Decimal"},
   "nmrOfEntries": {range:"NonNegativeInteger"},
-
-  "averageEntryWeight": { range: "Decimal",  label:"Avg. entry weight",
+  "averageEntryWeight": { range: "Decimal",  //label:"Avg. entry weight",
     computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
     expression: () => sim.stat.cumulativeEntryWeight / sim.stat.nmrOfEntries
   },
   "cumulativeExitWeight": {range:"Decimal"},
   "nmrOfExits": {range:"NonNegativeInteger"},
-  "averageExitWeight": { range: "Decimal",  label:"Avg. exit weight",
+  "averageExitWeight": { range: "Decimal",  //label:"Avg. exit weight",
     computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
     expression: () => sim.stat.cumulativeExitWeight / sim.stat.nmrOfExits
   },
-  "maxSalesBatchSize": {range:"NonNegativeInteger",  label:"Max. sales batch size"},
+  "maxSalesBatchSize": {range:"NonNegativeInteger", //label:"Max. sales batch size"
+  },
   "cumulativeExitAge": {range:"NonNegativeInteger"},
-  "avgAgeAtExit": { range: "Decimal",  label:"Avg. age at exit",
+  "avgAgeAtExit": { range: "Decimal", //label:"Avg. age at exit",
     computeOnlyAtEnd: true, decimalPlaces: 1, unit: "mo",
     expression: () => sim.stat.cumulativeExitAge / sim.stat.nmrOfExits
   },
-  "maxExitAge": { range: "Decimal",  label:"Max. age at exit",
+  "maxExitAge": { range: "Decimal", //label:"Max. age at exit",
     decimalPlaces: 1, unit: "mo"
   },
 };
