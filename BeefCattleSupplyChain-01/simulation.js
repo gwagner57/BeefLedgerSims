@@ -215,6 +215,13 @@ sim.model.OnEachTimeStep = function () {
           cattle: feedlotEntryBatch
         }));
       }
+    } else { // potential supplier breeders
+      // skim off feedlot-mature cattle
+      const skimLevel = 50;
+      if (breeder.atFeedlotEntryAge > skimLevel) {
+        breeder.cattle.splice(0, skimLevel);
+        breeder.atFeedlotEntryAge -= skimLevel;
+      }
     }
     // take care of daily births
     for (let i=0; i < nmrOfNewBornCalves; i++) {
@@ -406,15 +413,26 @@ sim.model.statistics = {
   "capacityFeedlot2": {objectType:"Feedlot", objectIdRef: 2, property:"capacity",
       computeOnlyAtEnd: true, label:"Feedlot 2 capacity"},
 
+  "stockAtBreeders": {range:"NonNegativeInteger", showTimeSeries: true, label:"Breeders' stock",
+      expression: function () {
+        var cattle = cLASS["Cattle"].instances, count=0;
+        for (let i=0; i < Object.keys( cattle).length; i++) {
+          let c = cattle[Object.keys( cattle)[i]];
+          if (c.phase === CattlePhaseEL.AT_BREEDER) count++;
+        }
+        return count
+      }
+  },
+
   "cumulativeEntryWeight": {range:"Decimal"},
   "nmrOfEntries": {range:"NonNegativeInteger"},
-  "averageEntryWeight": { range: "Decimal",  //label:"Avg. entry weight",
+  "averageEntryWeight": { range: "Decimal", // label:"Avg. entry weight",
     computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
     expression: () => sim.stat.cumulativeEntryWeight / sim.stat.nmrOfEntries
   },
   "cumulativeExitWeight": {range:"Decimal"},
   "nmrOfExits": {range:"NonNegativeInteger"},
-  "averageExitWeight": { range: "Decimal",  //label:"Avg. exit weight",
+  "averageExitWeight": { range: "Decimal", // label:"Avg. exit weight",
     computeOnlyAtEnd: true, decimalPlaces: 1, unit: "kg",
     expression: () => sim.stat.cumulativeExitWeight / sim.stat.nmrOfExits
   },
