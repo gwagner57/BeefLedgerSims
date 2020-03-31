@@ -6,19 +6,17 @@ var Purchase = new cLASS({
   shortLabel: "purch",
   supertypeName: "eVENT",
   properties: {
-    "feedlot": {range: "Feedlot"},
-    "breeder": {range: "Breeder", shortLabel: "brdr"},
-    "batchPrice": { range: "PositiveDecimal", label: "Batch price", shortLabel: "price"},
-    "cattle": { range: "Cattle", label: "Purchased cattle", shortLabel: "ctl", minCard: 0, maxCard: Infinity},
+    "feedlot": {range: "Feedlot", shortLabel: "fl"},
+    "breeder": {range: "Breeder"},
+    "batchPrice": { range: "PositiveDecimal", label: "Batch price", shortLabel: "bPr"},
+    "cattle": { range: "Cattle", label: "Purchased cattle", minCard: 0, maxCard: Infinity},
   },
   methods: {
     "onEvent": function () {
-      var followupEvents=[], c=null;
-      // deduct number of transferred cattle from atFeedlotEntryAge counter
-      this.breeder.atFeedlotEntryAge -= this.cattle.length;
+      var followupEvents=[];
       // process transferred cattle
       for (let i=0; i < this.cattle.length; i++) {
-        c = this.cattle[i];
+        let c = this.cattle[i];
         c.phase = CattlePhaseEL.AT_FEEDLOT;
         // update statistics
         sim.stat.nmrOfEntries++;

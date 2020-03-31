@@ -3,7 +3,7 @@ var CattlePhaseEL = new eNUMERATION( "CattlePhaseEL",
 	
 var Cattle = new cLASS({
   Name: "Cattle",
-  shortLabel: "catl",
+  //shortLabel: "catl",
   supertypeName: "oBJECT",
   properties: {
     "bornOn": { range: "Integer", label: "Born on", shortLabel: "born"},

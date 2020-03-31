@@ -199,24 +199,12 @@
 				<v:ud v:nameU="visVersion" v:val="VT0(14):26"/>
 			</v:userDefs>
 			<title>Binary Association</title>
-			<g id="shape30-55" v:mID="30" v:groupContext="shape" transform="translate(-57.6253,29.7387)">
-				<title>end1_name</title>
-				<desc>pref. buyers</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="24.4901" cy="238.809" width="48.99" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>pref. buyers</text>			</g>
 			<g id="shape31-57" v:mID="31" v:groupContext="shape" transform="translate(-22.4418,1.95285)">
 				<title>end1_mp</title>
-				<desc>*</desc>
+				<desc>1</desc>
 				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 				<v:textRect cx="6.89835" cy="238.809" width="13.8" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>*</text>			</g>
-			<g id="shape32-59" v:mID="32" v:groupContext="shape" transform="translate(-109.736,29.8239)">
-				<title>end2_name</title>
-				<desc>pref. suppliers</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="28.1813" cy="238.043" width="56.37" height="17.6036"/>
-				<text x="4.91" y="240.44" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>pref. suppliers</text>			</g>
+				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>1</text>			</g>
 			<g id="shape33-61" v:mID="33" v:groupContext="shape" transform="translate(-109.736,2.03805)">
 				<title>end2_mp</title>
 				<desc>*</desc>
@@ -225,53 +213,6 @@
 				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>*</text>			</g>
 			<g id="shape29-63" v:mID="29" v:groupContext="groupContent">
 				<path d="M0 254.66 L-10.63 254.66 L-10.63 254.74 L-118.38 254.74" class="st5"/>
-			</g>
-		</g>
-		<g id="group34-66" transform="translate(226.186,-223.492)" v:mID="34" v:groupContext="group">
-			<v:userDefs>
-				<v:ud v:nameU="UMLShapeType" v:val="VT0(23):26"/>
-				<v:ud v:nameU="UMLObjectGUID" v:val="VT4({E4A75AC3-7E58-4F8E-A036-5B924CCE6E3E})"/>
-				<v:ud v:nameU="UMLError" v:val="VT0(0):26"/>
-				<v:ud v:nameU="BeginAngle" v:val="VT0(1.5707963267949):32"/>
-				<v:ud v:nameU="EndAngle" v:val="VT0(-1.5707963267949):32"/>
-				<v:ud v:nameU="UMLPresOption1" v:val="VT0(34304):26"/>
-				<v:ud v:nameU="UMLSuppressOption" v:val="VT0(0):26"/>
-				<v:ud v:nameU="Navigability" v:val="VT0(0):26"/>
-				<v:ud v:nameU="UMLVersion" v:val="VT0(2):26"/>
-				<v:ud v:nameU="DX1" v:val="VT0(-4.4408920985006E-016):24"/>
-				<v:ud v:nameU="DY1" v:val="VT0(0.10095084815551):24"/>
-				<v:ud v:nameU="DX3" v:val="VT0(4.4408920985006E-016):24"/>
-				<v:ud v:nameU="DY3" v:val="VT0(-0.10095084815551):24"/>
-				<v:ud v:nameU="visDescription" v:val="VT4(Represents an association between two classifiers.)"/>
-				<v:ud v:nameU="visVersion" v:val="VT0(14):26"/>
-			</v:userDefs>
-			<title>Binary Association.34</title>
-			<g id="shape35-67" v:mID="35" v:groupContext="shape" transform="translate(-68.1058,-6.51561)">
-				<title>end1_name</title>
-				<desc>potential buyers</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="31.5073" cy="238.809" width="63.02" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>potential buyers</text>			</g>
-			<g id="shape36-69" v:mID="36" v:groupContext="shape" transform="translate(5.09117,-6.51561)">
-				<title>end1_mp</title>
-				<desc>*</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="6.89835" cy="238.809" width="13.8" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>*</text>			</g>
-			<g id="shape37-71" v:mID="37" v:groupContext="shape" transform="translate(-180.578,-4.03042)">
-				<title>end2_name</title>
-				<desc>potential suppliers</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="35.1986" cy="238.809" width="70.4" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>potential suppliers</text>			</g>
-			<g id="shape38-73" v:mID="38" v:groupContext="shape" transform="translate(-204.557,-4.03042)">
-				<title>end2_mp</title>
-				<desc>*</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="6.89835" cy="238.809" width="13.8" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>*</text>			</g>
-			<g id="shape34-75" v:mID="34" v:groupContext="groupContent">
-				<path d="M0 253.46 L0 226.39 L-185.67 226.39 L-185.67 255.94" class="st5"/>
 			</g>
 		</g>
 		<g id="group39-78" transform="translate(27.0521,-179.502)" v:mID="39" v:groupContext="group">
@@ -694,64 +635,8 @@
 			<g id="shape124-189" v:mID="124" v:groupContext="shape">
 				<title>Operations</title>
 			</g>
-			<g id="shape125-191" v:mID="125" v:groupContext="shape">
-				<title>Attributes</title>
-				<desc>date</desc>
-				<v:textBlock v:margins="rect(1,1,1,1)" v:tabSpace="42.5197" v:verticalAlign="0"/>
-				<v:textRect cx="26.9291" cy="241.304" width="53.86" height="12.6142"/>
-				<rect x="0" y="234.997" width="53.8583" height="12.6142" class="st1"/>
-				<text x="1" y="243.2" class="st2" v:langID="1033"><v:paragraph/><v:tabList/>date</text>			</g>
-			<g id="shape126-194" v:mID="126" v:groupContext="shape" transform="translate(0,-12.6142)">
-				<title>Name</title>
-				<desc>«event type» restockings</desc>
-				<v:textBlock v:margins="rect(1,1,1,1)" v:tabSpace="42.5197"/>
-				<v:textRect cx="26.9291" cy="237.009" width="53.86" height="21.2035"/>
-				<path d="M0 247.61 L53.86 247.61 L53.86 226.41 L0 226.41 L0 247.61 Z" class="st1"/>
-				<text x="5.46" y="234.61" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>«event type»<v:newlineChar/><tspan
-							x="8.15" dy="1.2em" class="st6">restockings</tspan></text>			</g>
 			<g id="shape127-198" v:mID="127" v:groupContext="shape" transform="translate(17.8583,-29.5905)">
 				<title>Parameters</title>
-			</g>
-		</g>
-		<g id="group128-200" transform="translate(233.246,-172.388)" v:mID="128" v:groupContext="group">
-			<v:userDefs>
-				<v:ud v:nameU="UMLShapeType" v:val="VT0(23):26"/>
-				<v:ud v:nameU="UMLObjectGUID" v:val="VT4({4E99EFB4-1691-43BE-B156-358D5DF40BE3})"/>
-				<v:ud v:nameU="UMLError" v:val="VT0(0):26"/>
-				<v:ud v:nameU="BeginAngle" v:val="VT0(-1.5707963267949):32"/>
-				<v:ud v:nameU="EndAngle" v:val="VT0(-1.5707963267949):32"/>
-				<v:ud v:nameU="UMLPresOption1" v:val="VT0(512):26"/>
-				<v:ud v:nameU="UMLSuppressOption" v:val="VT0(0):26"/>
-				<v:ud v:nameU="Navigability" v:val="VT0(0):26"/>
-				<v:ud v:nameU="UMLVersion" v:val="VT0(2):26"/>
-				<v:ud v:nameU="DX1" v:val="VT0(0):24"/>
-				<v:ud v:nameU="DY1" v:val="VT0(-0.025519435250857):24"/>
-				<v:ud v:nameU="DX3" v:val="VT0(-4.4408920985006E-016):24"/>
-				<v:ud v:nameU="DY3" v:val="VT0(-0.025519435250851):24"/>
-				<v:ud v:nameU="visDescription" v:val="VT4(Represents an association between two classifiers.)"/>
-				<v:ud v:nameU="visVersion" v:val="VT0(14):26"/>
-			</v:userDefs>
-			<title>Binary Association.128</title>
-			<g id="shape129-201" v:mID="129" v:groupContext="shape" transform="translate(-1.96931,24.5286)">
-				<title>end1_name</title>
-			</g>
-			<g id="shape130-202" v:mID="130" v:groupContext="shape" transform="translate(-26.0186,24.5321)">
-				<title>end1_mp</title>
-				<desc>1</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="6.9335" cy="238.809" width="13.87" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>1</text>			</g>
-			<g id="shape131-204" v:mID="131" v:groupContext="shape" transform="translate(-2.02158,54.2658)">
-				<title>end2_name</title>
-			</g>
-			<g id="shape132-205" v:mID="132" v:groupContext="shape" transform="translate(-26.0006,54.2658)">
-				<title>end2_mp</title>
-				<desc>*</desc>
-				<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
-				<v:textRect cx="6.89835" cy="238.809" width="13.8" height="17.6036"/>
-				<text x="4.91" y="241.21" class="st2" v:langID="1031"><v:paragraph v:horizAlign="1"/><v:tabList/>*</text>			</g>
-			<g id="shape128-207" v:mID="128" v:groupContext="groupContent">
-				<path d="M-7.06 247.61 L-7.06 258.24 L-7.11 258.24 L-7.11 308.81" class="st5"/>
 			</g>
 		</g>
 		<g id="group82-210" transform="translate(292.8,-95.8707)" v:mID="82" v:groupContext="group">

@@ -2,9 +2,10 @@
  Simulation Parameters
 ********************************************************/
 sim.scenario.simulationEndTime = 5*360;  // 3 years
-sim.scenario.idCounter = 3001;  // start value of auto IDs
+sim.scenario.idCounter = 3001;  // start value of auto IDs (for cattle objects)
 //sim.scenario.randomSeed = 2345;  // optional
 sim.config.createLog = false;
+sim.config.visualize = true;
 //sim.config.suppressInitialStateUI = true;
 //sim.config.runInMainThread = true;  // for debugging
 /*******************************************************
@@ -71,17 +72,17 @@ sim.model.v.nmrOfFeedlots =  {
 sim.model.v.nmrOfBreedersPerFeedlot =  {
   range: "PositiveInteger",
   label: "Nmr of breeders/feedlot",
-  initialValue: 10
+  initialValue: 30
 };
 sim.model.v.breederCapacityMin =  {
   range: "PositiveInteger",
   hint: "Minimum breeder capacity (*100)",
-  initialValue: 2
+  initialValue: 3
 };
 sim.model.v.breederCapacityMax =  {
   range: "PositiveInteger",
   hint: "Maximum breeder capacity (*100)",
-  initialValue: 5
+  initialValue: 7
 };
 sim.model.v.feedlotCapacityMin =  {
   range: "PositiveInteger",
@@ -110,16 +111,7 @@ sim.model.v.feedlotExitAgeThreshold =  {
 sim.model.v.purchaseMinBatchSize =  {
   range: "PositiveInteger",
   hint: "Purchase minimum batch size",
-  initialValue: 10
-};
-// avgPurchasePrice
-sim.model.v.purchasePricePerKg =  {
-  range: "Decimal",
-  decimalPlaces: 2,
-  unit: "AUD",
-  label: "Purchase price/kg",
-  hint: "Purchase price per kg (AUD)",
-  initialValue: 3.00
+  initialValue: 20
 };
 sim.model.v.feedlotDwgAverage =  {
   range: "Decimal",
@@ -172,11 +164,14 @@ sim.model.OnEachTimeStep = function () {
   /*********************************************************************
    ***  Process breeders data
    ********************************************************************/
+  // compute maxEntryCapacity
+  Object.keys( feedlots).forEach( function (objIdStr) {
+    var feedlot = feedlots[objIdStr];
+    feedlot.maxEntryCapacity = Math.max( 0, feedlot.capacity - feedlot.cattle.length);
+  });
   Object.keys( breeders).forEach( function (objIdStr) {
     var breeder = breeders[objIdStr],
         feedlot = breeder.prefBuyer,
-        maxEntryCapacity = 0,
-        feedlotEntryBatch=[], tooYoungIndex=0, purchaseBatchSize=0,
         upperBound = breeder.capacity - breeder.cattle.length,
         nmrOfNewBornCalves = rand.uniformInt( 0, upperBound);
     for (let i=0; i < breeder.cattle.length; i++) {
@@ -189,35 +184,51 @@ sim.model.OnEachTimeStep = function () {
         breeder.atFeedlotEntryAge++;
       }
     }
+    const tooYoungIndex = breeder.cattle.findIndex( c =>
+        sim.time - c.bornOn < sim.v.feedlotEntryAgeThreshold * 30);
+    if (breeder.atFeedlotEntryAge !== tooYoungIndex) {
+      console.log("sim.time: ",sim.time, "tooYoungIndex: ",tooYoungIndex, "atFeedlotEntryAge", breeder.atFeedlotEntryAge);
+    }
     if (feedlot) {  // breeder has a preferred buyer
-      maxEntryCapacity = feedlot.capacity - feedlot.cattle.length;
       // test if there are enough feedlot-mature cattle and no purchase event has already been scheduled
       if (breeder.atFeedlotEntryAge >= sim.v.purchaseMinBatchSize &&
           !sim.FEL.getEventsOfType("Purchase").some( function (evt) {
             return evt.breeder.id === breeder.id;
           }) &&
-          sim.v.purchaseMinBatchSize <= maxEntryCapacity
+          sim.v.purchaseMinBatchSize <= feedlot.maxEntryCapacity
       ) {
-        tooYoungIndex = breeder.cattle.findIndex( c =>
+        const tooYoungIndex = breeder.cattle.findIndex( c =>
             sim.time - c.bornOn < sim.v.feedlotEntryAgeThreshold * 30);
+        let purchaseBatchSize = 0;
         if (tooYoungIndex === -1) {
-          purchaseBatchSize = Math.min( breeder.cattle.length, maxEntryCapacity);
+          purchaseBatchSize = Math.min( breeder.cattle.length, feedlot.maxEntryCapacity);
         } else {
-          purchaseBatchSize = Math.min( tooYoungIndex, maxEntryCapacity);
+          purchaseBatchSize = Math.min( tooYoungIndex, feedlot.maxEntryCapacity);
         }
         // extract and remove the first purchaseBatchSize elements
-        feedlotEntryBatch = breeder.cattle.splice(0, purchaseBatchSize);
-        // create Purchase event
-        sim.scheduleEvent( new Purchase({
-          feedlot: feedlot,
-          breeder: breeder,
-          batchPrice: feedlotEntryBatch.reduce((w,c) => w + c.weight, 0) * sim.v.purchasePricePerKg,
-          cattle: feedlotEntryBatch
-        }));
+        let feedlotEntryBatch = breeder.cattle.splice( 0, purchaseBatchSize);
+        feedlot.maxEntryCapacity -= purchaseBatchSize;
+        // deduct number of transferred cattle from atFeedlotEntryAge counter
+        breeder.atFeedlotEntryAge -= purchaseBatchSize;
+        let batchWeight = feedlotEntryBatch.reduce((w,c) => w + c.weight, 0);
+        let pricePerKg = 0;
+        let maxPurchasePricePerKg = feedlot.getMaxPurchasePricePerKg();
+        let minSalePricePerKg = breeder.getMinSalePricePerKg();
+        if (minSalePricePerKg <= maxPurchasePricePerKg) {
+          pricePerKg = Math.round( (minSalePricePerKg + maxPurchasePricePerKg) / 2 * 100) / 100;
+          sim.stat.avgPricePerKgFeedlotEntry = (sim.stat.nmrOfEntries * sim.stat.avgPricePerKgFeedlotEntry +
+              purchaseBatchSize * pricePerKg) / (sim.stat.nmrOfEntries + purchaseBatchSize);
+          sim.scheduleEvent( new Purchase({
+            feedlot: feedlot,
+            breeder: breeder,
+            batchPrice: batchWeight * pricePerKg,
+            cattle: feedlotEntryBatch
+          }));
+        }
       }
-    } else { // potential supplier breeders
+    } else { // breeder is not a contract, but only a potential supplier
       // skim off feedlot-mature cattle
-      const skimLevel = 50;
+      const skimLevel = 100;
       if (breeder.atFeedlotEntryAge > skimLevel) {
         breeder.cattle.splice(0, skimLevel);
         breeder.atFeedlotEntryAge -= skimLevel;
@@ -239,7 +250,7 @@ sim.model.OnEachTimeStep = function () {
    ********************************************************************/
   Object.keys( feedlots).forEach( function (objIdStr) {
     var feedlot = feedlots[objIdStr],
-        feedlotExitBatch=[], tooYoungIndex=0, saleBatchSize=0, restockingLevel=0;
+        feedlotExitBatch=[], tooYoungIndex=0, saleBatchSize=0;
     for (let i=0; i < feedlot.cattle.length; i++) {
       let c = feedlot.cattle[i];
       // take care of daily weight gain
@@ -277,9 +288,8 @@ sim.model.OnEachTimeStep = function () {
         pricePerKg: sim.v.carcassPricePerKg,
         cattle: feedlotExitBatch
       }));
-      restockingLevel = Math.floor( sim.v.restockingThresholdPercent/100 * feedlot.capacity);
-      if (feedlot.cattle.length < restockingLevel &&
-          feedlot.cattle.length + feedlotExitBatch.length >= restockingLevel) {
+      // restock weekly if stock is below restockingLevel
+      if (sim.time % 7 ===0 && feedlot.cattle.length < feedlot.getRestockingLevel()) {
         sim.scheduleEvent( new Restocking({ feedlot: feedlot}));
       }
     }
@@ -290,9 +300,8 @@ sim.model.OnEachTimeStep = function () {
  Define Initial State
 ********************************************************/
 sim.scenario.setupInitialState = function () {
-  if (sim.time === undefined) {
-    sim.time = 0;
-  }
+  // preliminary fix (TODO: make sure that sim.time is initialized before invoking setupInitialState
+  if (sim.time === undefined) sim.time = 0;
   // check model parameters
   if (sim.v.nmrOfFeedlots > 9) {
     console.log("Number of feedlots must not exceed 9.");
@@ -342,6 +351,7 @@ sim.scenario.setupInitialState = function () {
   for (let i=1; i <= sim.v.nmrOfFeedlots; i++) {
     let feedlot = new Feedlot({
       id: i,
+      name: "feedlot" + i,
       capacity: rand.uniformInt( sim.v.feedlotCapacityMin, sim.v.feedlotCapacityMax) * 100,
       liquidity: 500000,
       feedCostsPerDay: 3.2, fixedCostsPerDay: 500,
@@ -412,7 +422,7 @@ sim.model.statistics = {
       computeOnlyAtEnd: true, label:"Feedlot 1 capacity"},
   "capacityFeedlot2": {objectType:"Feedlot", objectIdRef: 2, property:"capacity",
       computeOnlyAtEnd: true, label:"Feedlot 2 capacity"},
-
+/*
   "stockAtBreeders": {range:"NonNegativeInteger", showTimeSeries: true, label:"Breeders' stock",
       expression: function () {
         var cattle = cLASS["Cattle"].instances, count=0;
@@ -422,6 +432,12 @@ sim.model.statistics = {
         }
         return count
       }
+  },
+*/
+  "avgPricePerKgFeedlotEntry": {
+    range: "Decimal", showTimeSeries: true, timeSeriesScalingFactor: 100,
+    label: "Avg. price/kg feedlot entry", hint: "Price per kg (AUD)",
+    unit:"AUD", initialValue: 3.0
   },
 
   "cumulativeEntryWeight": {range:"Decimal"},
@@ -462,4 +478,66 @@ sim.experiment.parameterDefs = [
 ];
 sim.experiment.storeEachExperimentScenarioRun = true;
 sim.experiment.timeSeriesStatisticsVariables = ["arrivedCustomers","departedCustomers"];
+*/
+
+/*******************************************************
+ Define the observation UI
+ ********************************************************/
+sim.config.observationUI.type = "SVG";
+sim.config.observationUI.canvas.width = 800;
+sim.config.observationUI.canvas.height = 400;
+//Allows background styling (not needed here)
+//sim.config.observationUI.canvas.style = "background-color:yellow";
+/*
+sim.config.observationUI.fixedElements = {
+  "LemonadePitcher": {
+    shapeName: "polyline",
+    shapeAttributes: {points: "200,100 200,150 250,150 250,100"},
+    style: "fill:none; stroke:black; stroke-width:3"
+  }
+};
+*/
+sim.config.observationUI.objectViews = {
+  "feedlot1": {shapeName: "circle",
+    // CSS style rules for the SVG element
+    style: "fill:orange; stroke-width:0",
+    // attribute-value slots of an SVG shape, using fixed values or expressions
+    shapeAttributes: {
+      // defining fixed values for the attributes of an SVG shape
+      cx: 300, cy: 200,
+      r: function (fl) {return Math.floor( fl.cattle.length / 5);}
+    }
+  },
+  "feedlot2": {shapeName: "circle",
+    // CSS style rules for the SVG element
+    style: "fill:olive; stroke-width:0",
+    // attribute-value slots of an SVG shape, using fixed values or expressions
+    shapeAttributes: {
+      // defining fixed values for the attributes of an SVG shape
+      cx: 600, cy: 200,
+      r: function (fl) {return Math.floor( fl.cattle.length / 5);}
+    }
+  },
+};
+/*
+sim.config.observationUI.eventAppearances = {
+  "DailyDemand": {
+    //sound: {duration: 1000, source:"12/300/80 14/200/90"},
+    view: {  // an event view is a web animation of a DOM element
+      imageFile: "customers.svg",
+      style: "width:300px; height:300px; position:absolute; left:-30%; top:135px;",
+      keyframes: [{left:'-30%'}, {left:'80%'}],
+      duration: 1000,  // ms
+      //iterations: Infinity,
+      //fill:
+    }
+  },
+  "EndOfDay": {
+    view: {  // an event view is a web animation of a DOM element
+      domElem: function () {return sim.visualEl;},  // the visualization container element
+      keyframes: [{backgroundColor:'lightgray'}, {backgroundColor:'darkslategrey'}],
+      duration: 1000  // ms
+    }
+  }
+};
 */
