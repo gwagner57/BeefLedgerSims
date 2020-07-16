@@ -13,8 +13,8 @@ oes.ui.i18n = {transDates:{}, changeDates:{}};
 ********************************************************/
 sim.model.name = "FeedLot-01";
 sim.model.title = "Cattle Breeders and a Feedlot";
-sim.model.systemNarrative = "A feedlot buys cattle from contract breeders with a minimum age of 26 months at a fixed price of 3.00 AUD/kg, "+
-    "feeds them until a minimum age of 30 months and then sells them to a slaughterhouse at a fixed contract price of 6.50 AUD "+
+sim.model.systemNarrative = "A feedlot buys cattle from contract breeders with a certain minimum age (e.g., 26 months) at a fixed price (of, e.g., 3.00 AUD/kg), "+
+    "feeds them until a certain minimum age (of, e.g., 30 months) and then sells them to a slaughterhouse at a fixed contract price (of, e.g., 6.50 AUD) "+
     "per kg carcass weight. On each day, each breeder has a certain number of new born calves. "+
     "As soon as a breeder has a sufficiently large batch of feedlot-mature cattle, it offers them to the feedlot, " +
     "which buys it when it has enough free capacity. As soon as a feedlot has a sufficiently large batch of slaughter-mature cattle, " +

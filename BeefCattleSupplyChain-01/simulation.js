@@ -5,7 +5,7 @@ sim.scenario.simulationEndTime = 5*360;  // 3 years
 sim.scenario.idCounter = 3001;  // start value of auto IDs (for cattle objects)
 //sim.scenario.randomSeed = 2345;  // optional
 sim.config.createLog = false;
-sim.config.visualize = true;
+sim.config.visualize = false;
 //sim.config.suppressInitialStateUI = true;
 //sim.config.runInMainThread = true;  // for debugging
 /*******************************************************
@@ -349,11 +349,12 @@ sim.scenario.setupInitialState = function () {
   }
   // create feedlots
   for (let i=1; i <= sim.v.nmrOfFeedlots; i++) {
+    let feedlotCapacity = rand.uniformInt( sim.v.feedlotCapacityMin, sim.v.feedlotCapacityMax) * 100;
     let feedlot = new Feedlot({
       id: i,
       name: "feedlot" + i,
-      capacity: rand.uniformInt( sim.v.feedlotCapacityMin, sim.v.feedlotCapacityMax) * 100,
-      liquidity: 500000,
+      capacity: feedlotCapacity,
+      liquidity: 400000 + 1000 * feedlotCapacity,
       feedCostsPerDay: 3.2, fixedCostsPerDay: 500,
       cattle: [],
       potSuppliers: [],
